@@ -1,0 +1,8 @@
+httpx
+ciso8601
+firebase-admin
+pandas
+pyarrow
+google-cloud-pubsub
+google-cloud-bigquery[pyarrow]
+google-cloud-bigquery-storage
