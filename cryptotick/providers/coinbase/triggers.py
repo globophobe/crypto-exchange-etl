@@ -27,7 +27,7 @@ class CoinbaseSpotETLDockerTrigger(CoinbaseSpotETL):
                 "masterConfig": {
                     "imageUri": container_name,
                 },
-                "scheduling": {"maxWaitTime": "7200s", "maxRunningTime": "1080s"},
+                "scheduling": {"maxWaitTime": "7200s", "maxRunningTime": "3600s"},
                 "args": [
                     "--api-symbol",
                     self.api_symbol,

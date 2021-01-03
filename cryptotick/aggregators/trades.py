@@ -5,7 +5,6 @@ from ..bqloader import (
     MULTIPLE_SYMBOL_AGGREGATE_SCHEMA,
     SINGLE_SYMBOL_AGGREGATE_SCHEMA,
     BigQueryLoader,
-    get_schema_columns,
     get_table_id,
 )
 from ..utils import date_range
@@ -15,30 +14,12 @@ from .utils import publish_post_aggregation
 
 
 class TradeAggregator(BaseAggregator):
-    def get_source(self, sep="_"):
-        return self.table_name.replace("_", sep)
-
-    def get_destination(self, sep="_"):
-        name = self.get_source(sep=sep)
-        return f"{name}{sep}aggregated"
-
-    @property
-    def log_prefix(self):
-        name = self.get_destination(sep=" ")
-        # Capitalize first letter
-        name = name[0].capitalize() + name[1:]
-        return f"{name} aggregated"
-
     @property
     def schema(self):
         if self.has_multiple_symbols:
             return MULTIPLE_SYMBOL_AGGREGATE_SCHEMA
         else:
             return SINGLE_SYMBOL_AGGREGATE_SCHEMA
-
-    @property
-    def columns(self):
-        return get_schema_columns(self.schema)
 
     def main(self):
         for date in date_range(self.date_from, self.date_to, reverse=True):
@@ -47,8 +28,8 @@ class TradeAggregator(BaseAggregator):
             if self.firestore_source.has_data(document):
                 if not self.firestore_destination.has_data(document):
                     data_frame = self.get_data_frame()
-                    data_frame = self.parse_dataframe(data_frame)
-                    self.write(data_frame)
+                    df = self.parse_dataframe(data_frame)
+                    self.write(df)
                 elif self.verbose:
                     print(f"{self.log_prefix}: {document} OK")
 

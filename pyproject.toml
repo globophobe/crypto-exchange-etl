@@ -1,8 +1,9 @@
 [tool.poetry]
 name = "cryptotick"
-version = "0.1.0"
+version = "0.1.1"
 description = "Download crypto exchange historical tick data, and load into Google BigQuery"
 authors = ["Alex <globophobe@gmail.com>"]
+readme = "README.md"
 license = "MIT"
 homepage = "https://github.com/globophobe/cryptotick"
 repository = "https://github.com/globophobe/cryptotick"
