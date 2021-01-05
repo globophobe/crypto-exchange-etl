@@ -1,7 +1,9 @@
 import math
 
+import pandas as pd
 
-def is_sample(last_row, row, has_multiple_symbols):
+
+def is_sample(last_row, row, has_multiple_symbols=False):
     if has_multiple_symbols:
         is_equal_symbol = last_row.symbol == row.symbol
     else:
@@ -21,45 +23,60 @@ def aggregate_trades(data_frame, has_multiple_symbols=False):
     idx = 0
     samples = []
     total_rows = len(data_frame) - 1
-    for row in data_frame.itertuples():
-        index = row.Index
-        last_index = index - 1
-        if index > 0:
-            is_last_iteration = index == total_rows
-            last_row = data_frame.loc[last_index]
-            # Is this the last iteration?
-            if is_last_iteration:
-                last_row = data_frame.loc[idx]
-                next_row = data_frame.loc[index]
-                # If equal, one sample.
-                if not is_sample(last_row, next_row, has_multiple_symbols):
-                    # Aggregate from idx to end of data frame.
-                    sample = data_frame.loc[idx:]
-                    samples.append(aggregate_trade(sample, has_multiple_symbols))
-                # Otherwise, two samples.
-                else:
+    # Were there two or more trades?
+    if len(data_frame) > 1:
+        for row in data_frame.itertuples():
+            index = row.Index
+            last_index = index - 1
+            if index > 0:
+                is_last_iteration = index == total_rows
+                last_row = data_frame.loc[last_index]
+                # Is this the last iteration?
+                if is_last_iteration:
+                    last_row = data_frame.loc[idx]
+                    next_row = data_frame.loc[index]
+                    # If equal, one sample.
+                    if not is_sample(last_row, next_row, has_multiple_symbols):
+                        # Aggregate from idx to end of data frame.
+                        sample = data_frame.loc[idx:]
+                        samples.append(aggregate_trade(sample, has_multiple_symbols))
+                    # Otherwise, two samples.
+                    else:
+                        # Aggregate from idx to last_index
+                        sample = data_frame.loc[idx:last_index]
+                        samples.append(aggregate_trade(sample, has_multiple_symbols))
+                        # Append last row.
+                        sample = data_frame.loc[index:]
+                        assert len(sample) == 1
+                        samples.append(aggregate_trade(sample, has_multiple_symbols))
+                # Is the last row equal to the current row?
+                elif is_sample(last_row, row, has_multiple_symbols):
                     # Aggregate from idx to last_index
                     sample = data_frame.loc[idx:last_index]
-                    samples.append(aggregate_trade(sample, has_multiple_symbols))
-                    # Append last row.
-                    sample = data_frame.loc[index:]
-                    assert len(sample) == 1
-                    samples.append(aggregate_trade(sample, has_multiple_symbols))
-            # Is the last row equal to the current row?
-            elif is_sample(last_row, row, has_multiple_symbols):
-                # Aggregate from idx to last_index
-                sample = data_frame.loc[idx:last_index]
-                aggregated_sample = aggregate_trade(sample, has_multiple_symbols)
-                samples.append(aggregated_sample)
-                idx = index
-    return samples
+                    aggregated_sample = aggregate_trade(sample, has_multiple_symbols)
+                    samples.append(aggregated_sample)
+                    idx = index
+    # Only one trade in data_frame
+    elif len(data_frame) == 1:
+        aggregated_sample = aggregate_trade(data_frame)
+        samples.append(aggregated_sample)
+    # Instantiate dataframe
+    data_frame = pd.DataFrame(samples)
+    # Round slippage
+    data_frame.slippage = data_frame.slippage.round(6)
+    # Next, calculate exponent.
+    data_frame = calculate_exponent(data_frame)
+    return data_frame
 
 
-def aggregate_trade(data_frame, has_multiple_symbols):
+def aggregate_trade(data_frame, has_multiple_symbols=False):
     last_row = data_frame.iloc[-1]
     timestamp = last_row.timestamp
     notional = data_frame.notional.sum()
-    slippage = calculate_slippage(data_frame, notional)
+    if has_slippage(data_frame):
+        slippage = calculate_slippage(data_frame, notional)
+    else:
+        slippage = 0
     data = {
         "date": timestamp.date(),
         "timestamp": timestamp,
@@ -75,16 +92,21 @@ def aggregate_trade(data_frame, has_multiple_symbols):
     return data
 
 
+def has_slippage(data_frame):
+    if len(data_frame) > 1:
+        prices = data_frame.price.to_numpy()
+        first_price = prices[0]
+        # Are all the prices equal?
+        return not (first_price == prices).all()
+    return False
+
+
 def calculate_slippage(data_frame, notional):
     first_row = data_frame.iloc[0]
-    if len(data_frame) > 2:
-        expected = first_row.price * notional
-        vwap = volume_weighted_average_price(data_frame)
-        actual = vwap * notional
-        slippage = abs(expected - actual)
-    else:
-        slippage = 0
-    return slippage
+    expected = first_row.price * notional
+    vwap = volume_weighted_average_price(data_frame)
+    actual = vwap * notional
+    return abs(expected - actual)
 
 
 def volume_weighted_average_price(data_frame):

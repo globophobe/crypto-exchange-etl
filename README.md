@@ -2,9 +2,9 @@
 
 Historical tick data can be useful for analyzing financial markets, and for machine learning. As an example, refer to ["The Volume Clock: Insights into the High Frequency Paradigm"](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2034858).
 
-Whenever possible, data is downloaded from AWS S3.
+When possible, data is downloaded from AWS S3.
 
-Otherwise, it is downloaded from the cryptocurrency exchange API.
+Otherwise, it is downloaded with the cryptocurrency exchange REST API.
 
 Supported cryptocurrency exchanges
 ----------------------------------
@@ -19,7 +19,7 @@ Google BigQuery is cost performant. For about $2 a month, the price of a coffee,
 
 Historical tick data
 --------------------
-BitMEX XBTUSD
+Example BitMEX XBTUSD data
 
 |  date (1)  |    timestamp    | nanoseconds (2) | price  | volume | notional | tickRule (3) | index (4) |
 |------------|-----------------|-----------------|--------|--------|----------|--------------|-----------|
@@ -32,10 +32,10 @@ BitMEX XBTUSD
 Note:
 
 1. Date
-* [Partitioning data](https://cloud.google.com/bigquery/docs/partitioned-tables) is important when using BigQuery. Data is partitioned by date by cryptotick.
+* [Partitioning data](https://cloud.google.com/bigquery/docs/partitioned-tables) is important when using BigQuery. Date is a required column, as `cryptotick` partitions data by date.
 
 2. Nanoseconds
-* BigQuery doesn't support nanoseconds. However, many cryptocurrency exchanges don't either. Nanoseconds will be saved to a new column by cryptotick.
+* BigQuery doesn't support nanoseconds. Then again, most cryptocurrency exchanges don't either. Nanoseconds will be saved to a new column by cryptotick.
 
 3. Tick rule
 * Plus ticks and zero plus ticks have tick rule 1, minus ticks and zero minus ticks have tick rule -1.
@@ -46,23 +46,39 @@ Note:
 
 Aggregated historical tick data
 -------------------------------
-BitMEX XBTUSD
+Example BitMEX XBTUSD aggregated data
 
 Trades are aggregated by equal timestamp, nanoseconds, and tick rule. Referring to the previous table, trades 8 and 9 are aggregated into a single trade. Those trades have equal timestamps and, are both market sells. Trades 10 and 11 are also aggregated. They have equal timestamps, and are both market buys.
 
-|    date    |    timestamp    | price  | slippage (1) | volume | tickRule | exponent (2) | notional |
-|------------|-----------------|--------|--------------|--------|----------|--------------|----------|
-| 2016-05-13 | 03:23:24.383144 | 454.13 | 0            | 3500   | -1       | 2            | 7.7...   |
-| 2016-05-13 | 03:23:24.383144 | 454.16 |              | 3000   | 1        | 3            | 6.6...   |
-| 2016-05-13 | 03:24:36.306484 | 454.18 | 0            | 2000   | 1        | 3            | 4.4...   |
+|    date    |    timestamp    | price  | slippage (1) | volume | tickRule | exponent (2) |  notional   |
+|------------|-----------------|--------|--------------|--------|----------|--------------|-------------|
+| 2016-05-13 | 03:23:24.383144 | 454.13 | 0            | 3500   | -1       | 2            | 7.7...      |
+| 2016-05-13 | 03:23:24.383144 | 454.16 |              | 3000   | 1        | 3            | 6.6...      |
+| 2016-05-13 | 03:24:36.306484 | 454.18 | 0            | 2000   | 1        | 3            | 4.4...      |
 
 Note:
 
 1. Slippage
-* The difference between the ideal execution at the first asking price, and the volume weighted average price of the fully executed trade. For example, the second trade has slippage of $1. Ideal execution was $454.14 * 3000 = . Actual execution was ($415.14 * 0.0) + ($454.16 * 0.0) =
+* The difference between the ideal execution at the first price and the weighted average price by notional, of the fully executed trade. For example, a trader market buys 20 notional at $1. However, only 10 notional is offered at $1, the next offer for an additional 10 notional is at $2. In this case, ideal execution is $1 * 20 = $20. Actual execution is ($1 * 10) + ($2 * 10) = $30. Slippage would be $30 - 20 = $10.
 
 2. Exponent
-* Trades by GUI traders, i.e. traders in front of a screen are often executed in multiples of 10. Trades by bots are often not multiples of 10. In the example, the first trade is a multiple of 100, so has exponent 0. The other trades are multiples of 1000, so have exponent 3.
+* Trades by GUI traders, i.e. traders in front of a screen, often execute trades with size in multiples of 10. Bots tend to execute trades with random size. In the example data, the first trade is a multiple of 100, so has exponent 2. The other trades are multiples of 1000, so have exponent 3. _Note: Not all cryptocurrency exchanges have high frequency of trades with sizes in multiples of 10._
+
+Limit the number of partitions scanned
+--------------------------------------
+As part of the [free tier](https://cloud.google.com/free), a terabyte of data can be queried for free with Google BigQuery. However, it is important to query by partition. `cryptotick` partitions data by date. 
+
+Suppose cryptotick.bitmex_XBTUSD has 10GB of data, and `@date` has 10MB of data.
+
+:money_with_wings: bad, scans all partitions. Query will process 10GB
+```
+SELECT * from cryptotick.bitmex_XBTUSD order by timestamp, nanoseconds, index;
+```
+
+:100: good, scans a single partitions. Query will process 10MB
+```
+SELECT * from cryptotick.bitmex_XBTUSD where date = @date order by timestamp, nanoseconds, index;
+```
 
 Installation
 ------------

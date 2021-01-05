@@ -29,6 +29,7 @@ class CoinbaseSpotETLDockerTrigger(CoinbaseSpotETL):
                 },
                 "scheduling": {"maxWaitTime": "7200s", "maxRunningTime": "3600s"},
                 "args": [
+                    "coinbase_spot.py",
                     "--api-symbol",
                     self.api_symbol,
                     "--date-from",

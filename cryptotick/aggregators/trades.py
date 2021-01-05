@@ -1,4 +1,3 @@
-import pandas as pd
 from google.cloud import bigquery
 
 from ..bqloader import (
@@ -9,7 +8,7 @@ from ..bqloader import (
 )
 from ..utils import date_range
 from .base import BaseAggregator
-from .lib import aggregate_trades, calculate_exponent
+from .lib import aggregate_trades
 from .utils import publish_post_aggregation
 
 
@@ -65,16 +64,11 @@ class TradeAggregator(BaseAggregator):
         return BigQueryLoader(self.get_source(), self.date).read_table(sql, job_config)
 
     def parse_dataframe(self, data_frame):
-        # First, aggregate.
-        samples = aggregate_trades(
+        df = aggregate_trades(
             data_frame, has_multiple_symbols=self.has_multiple_symbols
         )
-        data_frame = pd.DataFrame(samples, columns=self.columns)
-        data_frame.slippage = data_frame.slippage.round(6)
-        # Next, calculate exponent.
-        data_frame = calculate_exponent(data_frame)
-        data_frame["index"] = data_frame.index
-        return data_frame
+        df["index"] = df.index
+        return df[self.columns]
 
     def write(self, data_frame):
         # BigQuery
