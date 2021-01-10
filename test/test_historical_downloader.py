@@ -1,16 +1,14 @@
 import datetime
 
 from cryptotick.providers.bitmex import BITMEX, XBTUSD, BitmexPerpetualETL
+from cryptotick.providers.bitmex.constants import MIN_DATE
 from cryptotick.s3downloader import HistoricalDownloader
 
 SYMBOLS = [XBTUSD]
 
 
 def assert_200(exchange):
-    now = datetime.datetime.utcnow()
-    delta = now - datetime.timedelta(days=2)
-    two_days_ago = delta.date()
-    url = BitmexPerpetualETL(SYMBOLS).get_url(two_days_ago)
+    url = BitmexPerpetualETL(SYMBOLS).get_url(MIN_DATE)
     data_frame = HistoricalDownloader(url).main()
     assert len(data_frame) > 0
 

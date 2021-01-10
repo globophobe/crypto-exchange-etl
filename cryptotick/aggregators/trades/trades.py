@@ -1,15 +1,14 @@
 from google.cloud import bigquery
 
-from ..bqloader import (
+from ...bqloader import (
     MULTIPLE_SYMBOL_AGGREGATE_SCHEMA,
     SINGLE_SYMBOL_AGGREGATE_SCHEMA,
     BigQueryLoader,
     get_table_id,
 )
-from ..utils import date_range
-from .base import BaseAggregator
+from ...utils import date_range
+from ..base import BaseAggregator
 from .lib import aggregate_trades
-from .utils import publish_post_aggregation
 
 
 class TradeAggregator(BaseAggregator):
@@ -21,23 +20,16 @@ class TradeAggregator(BaseAggregator):
             return SINGLE_SYMBOL_AGGREGATE_SCHEMA
 
     def main(self):
-        for date in date_range(self.date_from, self.date_to, reverse=True):
+        for date in date_range(self.date_from, self.date_to):
             self.date = date
             document = date.isoformat()
             if self.firestore_source.has_data(document):
                 if not self.firestore_destination.has_data(document):
                     data_frame = self.get_data_frame()
-                    df = self.parse_dataframe(data_frame)
+                    df = self.process_data_frame(data_frame)
                     self.write(df)
                 elif self.verbose:
                     print(f"{self.log_prefix}: {document} OK")
-
-        # Intended for GCP
-        if len(self.post_aggregation):
-            publish_post_aggregation(
-                self.table_name, self.date_from, self.post_aggregation
-            )
-
         print(
             f"{self.log_prefix}: "
             f"{self.date_from.isoformat()} to {self.date_to.isoformat()} OK"
@@ -63,7 +55,7 @@ class TradeAggregator(BaseAggregator):
         """
         return BigQueryLoader(self.get_source(), self.date).read_table(sql, job_config)
 
-    def parse_dataframe(self, data_frame):
+    def process_data_frame(self, data_frame):
         df = aggregate_trades(
             data_frame, has_multiple_symbols=self.has_multiple_symbols
         )
@@ -76,4 +68,4 @@ class TradeAggregator(BaseAggregator):
         bigquery_loader = BigQueryLoader(table_name, self.date)
         bigquery_loader.write_table(self.schema, data_frame)
         # Firebase
-        self.set_firebase(data_frame, cache="firestore_destination", is_complete=True)
+        self.set_firebase(data_frame, attr="firestore_destination", is_complete=True)

@@ -3,7 +3,7 @@ import json
 import re
 import time
 
-from ...bqloader import MULTIPLE_SYMBOL_AGGREGATE_SCHEMA, get_table_name
+from ...bqloader import MULTIPLE_SYMBOL_SCHEMA, get_table_name
 from ...cryptotick import FuturesETL
 from ...utils import date_range, get_delta, publish
 from .api import get_active_futures, get_expired_futures
@@ -16,15 +16,14 @@ class FTXMOVEETL(BaseFTXETL, FuturesETL):
         self,
         date_from=None,
         date_to=None,
-        schema=MULTIPLE_SYMBOL_AGGREGATE_SCHEMA,
-        steps=[],
+        aggregate=False,
+        schema=MULTIPLE_SYMBOL_SCHEMA,
         verbose=False,
     ):
         self.exchange = FTX
         self.initialize_dates(MIN_DATE, date_from, date_to)
         self.root_symbol = BTC
         self.symbols = self.get_symbols(BTC)
-        self.steps = json.dumps(steps)
         self.schema = schema
         self.verbose = verbose
 
@@ -183,8 +182,7 @@ class FTXMOVEETL(BaseFTXETL, FuturesETL):
         table_name = get_table_name(FTX, suffix=self.get_suffix)
         data = {
             "table_name": table_name,
-            "date": self.date_from,
+            "date": self.date_from.isoformat(),
             "has_multiple_symbols": True,
-            "post_aggregation": self.post_aggregation,
         }
         publish("trade-aggregator", data)

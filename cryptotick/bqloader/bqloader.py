@@ -62,15 +62,17 @@ class BigQueryLoader:
         )
         if isinstance(data, pd.DataFrame):
             # If data_frame, get columns
-            columns = get_schema_columns(schema)
-            data = data[columns]
-            job = self.bq.load_table_from_dataframe(
-                data, partition, job_config=job_config
-            )
+            if len(data):
+                columns = get_schema_columns(schema)
+                data = data[columns]
+                self.bq.load_table_from_dataframe(
+                    data, partition, job_config=job_config
+                ).result()
         else:
-            # If dict, assume correct
-            job = self.bq.load_table_from_json(data, partition, job_config=job_config)
-        job.result()
+            # If json, assume correct
+            self.bq.load_table_from_json(
+                data, partition, job_config=job_config
+            ).result()
 
     def delete_table(self):
         if self.table_exists():

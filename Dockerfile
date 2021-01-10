@@ -8,8 +8,9 @@ ENV PROJECT_ID $PROJECT_ID
 ENV BIGQUERY_LOCATION $BIGQUERY_LOCATION
 ENV BIGQUERY_DATASET $BIGQUERY_DATASET
 
-ADD cryptotitck /cryptotick/
+ADD cryptotick /cryptotick/
 ADD scripts /scripts/
+ADD entrypoint.sh /
 
 ADD requirements.txt /
 ADD requirements_extra /requirements_extra/
@@ -22,4 +23,4 @@ RUN apt-get update \
     && apt-get clean  \
     && rm -rf /var/lib/apt/lists/*
 
-ENTRYPOINT ["/scripts/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]

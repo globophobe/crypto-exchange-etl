@@ -15,6 +15,5 @@ class BybitPerpetualETLTrigger(BybitPerpetualETL):
                         "symbol": self.symbol,
                         "date": self.date.isoformat(),
                         "aggregate": self.aggregate,
-                        "post_aggregation": self.post_aggregation,
                     }
                     publish("bybit-perpetual", data)

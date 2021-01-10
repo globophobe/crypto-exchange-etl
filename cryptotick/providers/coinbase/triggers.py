@@ -1,4 +1,3 @@
-import json
 import os
 import time
 
@@ -9,7 +8,7 @@ from ...utils import date_range, get_container_name
 from .spot import CoinbaseSpotETL
 
 
-class CoinbaseSpotETLDockerTrigger(CoinbaseSpotETL):
+class CoinbaseSpotETLAIPlatformTrigger(CoinbaseSpotETL):
     def main(self):
         has_data = all(
             [self.has_data(date) for date in date_range(self.date_from, self.date_to)]
@@ -29,6 +28,7 @@ class CoinbaseSpotETLDockerTrigger(CoinbaseSpotETL):
                 },
                 "scheduling": {"maxWaitTime": "7200s", "maxRunningTime": "3600s"},
                 "args": [
+                    "--script",
                     "coinbase_spot.py",
                     "--api-symbol",
                     self.api_symbol,
@@ -38,8 +38,6 @@ class CoinbaseSpotETLDockerTrigger(CoinbaseSpotETL):
                     self.date_to.isoformat(),
                     "--aggregate",
                     self.aggregate,
-                    "--post_aggregation",
-                    json.dumps(self.post_aggregation),
                 ],
             }
             date = self.date_from.strftime("%Y%m%d")

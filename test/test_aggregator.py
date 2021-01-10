@@ -2,31 +2,9 @@ import datetime
 import random
 
 import pandas as pd
-from cryptotick.aggregators.lib import aggregate_trades
+from cryptotick.aggregators.trades.lib import aggregate_trades
 
-
-def get_trade(
-    timestamp=None,
-    nanoseconds=None,
-    price=None,
-    notional=None,
-    tick_rule=None,
-    symbol=None,
-):
-    p = price or round(random.random() * 10, 2)
-    n = notional or random.random() * 10
-    volume = p * n
-    data = {
-        "timestamp": timestamp or datetime.datetime.now(),
-        "nanoseconds": nanoseconds or 0,
-        "price": p,
-        "notional": n,
-        "volume": volume,
-        "tickRule": tick_rule or random.choice((1, -1)),
-    }
-    if symbol:
-        data.update({"symbol": symbol})
-    return data
+from .utils import get_trade
 
 
 def get_trades(ticks, is_equal_timestamp=False, nanoseconds=None, symbol=None):
@@ -98,6 +76,17 @@ def test_not_equal_symbols_and_equal_timestamps_and_ticks():
     ]
     samples = get_samples(trades)
     assert len(samples) == 2
+
+
+def test_not_equal_symbols_and_timestamps_and_equal_ticks():
+    trades = [
+        {"symbol": "A", "is_equal_timestamp": True, "ticks": [1, 1]},
+        {"symbol": "A", "is_equal_timestamp": False, "ticks": [-1]},
+        {"symbol": "B", "is_equal_timestamp": True, "ticks": [1, 1]},
+        {"symbol": "B", "is_equal_timestamp": False, "ticks": [-1]},
+    ]
+    samples = get_samples(trades)
+    assert len(samples) == 4
 
 
 def test_equal_ticks_and_equal_timestamp():

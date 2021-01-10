@@ -1,10 +1,10 @@
 from .constants import BTCUSD, COINBASE
 from .spot import CoinbaseSpotETL
-from .triggers import CoinbaseSpotETLDockerTrigger
+from .triggers import CoinbaseSpotETLAIPlatformTrigger
 
 __all__ = [
     "COINBASE",
     "BTCUSD",
     "CoinbaseSpotETL",
-    "CoinbaseSpotETLDockerTrigger",
+    "CoinbaseSpotETLAIPlatformTrigger",
 ]

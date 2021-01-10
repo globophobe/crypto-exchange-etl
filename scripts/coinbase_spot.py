@@ -1,11 +1,11 @@
- #!/usr/bin/env python
+#!/usr/bin/env python
 
 # isort:skip_file
 import typer
 
 import pathfix  # noqa: F401
 from cryptotick.providers.coinbase import BTCUSD, CoinbaseSpotETL
-from cryptotick.utils import set_environment, json_str_or_list
+from cryptotick.utils import set_environment
 
 
 def coinbase_spot(
@@ -13,7 +13,6 @@ def coinbase_spot(
     date_from: str = None,
     date_to: str = None,
     aggregate: bool = False,
-    post_aggregation: str = None,
     verbose: bool = False,
 ):
     set_environment()
@@ -22,7 +21,6 @@ def coinbase_spot(
         date_from=date_from,
         date_to=date_to,
         aggregate=False,
-        post_aggregation=json_str_or_list(post_aggregation),
         verbose=verbose
     ).main()
 

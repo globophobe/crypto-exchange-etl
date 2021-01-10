@@ -12,7 +12,6 @@ class BitmexPerpetualETL(BaseBitmexETL):
         date_from=None,
         date_to=None,
         aggregate=False,
-        post_aggregation=[],
         verbose=False,
     ):
         # Multiple symbols.
@@ -24,7 +23,6 @@ class BitmexPerpetualETL(BaseBitmexETL):
             date_from=date_from,
             date_to=date_to,
             aggregate=aggregate,
-            post_aggregation=post_aggregation,
             verbose=verbose,
         )
 
@@ -62,9 +60,5 @@ class BitmexPerpetualETL(BaseBitmexETL):
     def aggregate_trigger(self):
         for symbol in self.symbols:
             table_name = get_table_name(BITMEX, suffix=symbol)
-            data = {
-                "table_name": table_name,
-                "date": self.date_from,
-                "post_aggregation": self.post_aggregation,
-            }
+            data = {"table_name": table_name, "date": self.date_from.isoformat()}
             publish("trade-aggregator", data)

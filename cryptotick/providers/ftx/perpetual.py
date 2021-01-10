@@ -24,7 +24,6 @@ class FTXPerpetualETL(BaseFTXETL):
         table_name = get_table_name(FTX, suffix=self.get_suffix)
         data = {
             "table_name": table_name,
-            "date": self.date_from,
-            "post_aggregation": self.post_aggregation,
+            "date": self.date_from.isoformat(),
         }
         publish("trade-aggregator", data)

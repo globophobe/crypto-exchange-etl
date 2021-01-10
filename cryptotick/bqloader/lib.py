@@ -19,3 +19,10 @@ def get_table_name(exchange, suffix=""):
 
 def get_schema_columns(schema):
     return [field.name for field in schema]
+
+
+def stringify_datetime_types(data):
+    for key in ("date", "timestamp"):
+        if key in data:
+            data[key] = data[key].isoformat()
+    return data

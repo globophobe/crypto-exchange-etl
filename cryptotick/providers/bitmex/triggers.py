@@ -16,7 +16,6 @@ class BitmexPerpetualETLTrigger(BitmexPerpetualETL):
                         "symbols": " ".join(self.symbols),
                         "date": self.date.isoformat(),
                         "aggregate": self.aggregate,
-                        "post_aggregation": self.post_aggregation,
                     }
                     publish("bitmex-perpetual", data)
 
@@ -32,6 +31,5 @@ class BitmexFuturesETLTrigger(BitmexFuturesETL):
                         "root_symbol": self.root_symbol,
                         "date": self.date.isoformat(),
                         "aggregate": self.aggregate,
-                        "post_aggregation": self.post_aggregation,
                     }
                     publish("bitmex-futures", data)

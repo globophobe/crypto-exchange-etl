@@ -2,6 +2,8 @@ import datetime
 import os
 from copy import copy
 
+from google.api_core.datetime_helpers import DatetimeWithNanoseconds
+
 from ..constants import FIRESTORE_COLLECTIONS
 from ..utils import set_env_list
 
@@ -14,22 +16,54 @@ def get_collection_name(exchange, suffix=""):
     return collection
 
 
-def firestore_data(data):
+def firestore_data(data, strip_date=True):
     data = copy(data)
     # Firestore doesn't like datetime.date
-    if "date" in data:
-        del data["date"]
+    if strip_date:
+        if "date" in data:
+            del data["date"]
     # Timestamp
     for key in ("timestamp", "listing", "expiry"):
         if key in data:
             # UTC, please.
-            data[key] = data[key].replace(tzinfo=datetime.timezone.utc)
+            value = data[key]
+            value = value.replace(tzinfo=datetime.timezone.utc)
+            # Maybe not set
+            if isinstance(value, DatetimeWithNanoseconds):
+                try:
+                    value.nanosecond
+                except AttributeError:
+                    value._nanosecond = 0
+            data[key] = value
     # Float
-    for key in ("open", "high", "low", "close", "price", "volume", "notional"):
+    for key in (
+        "open",
+        "high",
+        "low",
+        "close",
+        "price",
+        "slippage",
+        "buySlippage",
+        "volume",
+        "buyVolume",
+        "notional",
+        "buyNotional",
+    ):
         if key in data:
             data[key] = float(data[key])
     # Int
-    for key in ("nanoseconds", "tickRule", "ticks", "index"):
+    for key in (
+        "nanoseconds",
+        "tickRule",
+        "ticks",
+        "buyTicks",
+        "exponent",
+        "index",
+    ):
         if key in data:
             data[key] = int(data[key])
+    if "nextDay" in data:
+        data["nextDay"] = firestore_data(data["nextDay"])
+    if "topN" in data:
+        data["topN"] = [firestore_data(t) for t in data["topN"]]
     return data

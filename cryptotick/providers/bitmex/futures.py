@@ -14,7 +14,6 @@ class BitmexFuturesETL(BaseBitmexETL, FuturesETL):
         date_to=None,
         schema=MULTIPLE_SYMBOL_AGGREGATE_SCHEMA,
         aggregate=False,
-        post_aggregation=[],
         verbose=False,
     ):
         self.exchange = BITMEX
@@ -24,7 +23,6 @@ class BitmexFuturesETL(BaseBitmexETL, FuturesETL):
         self.symbol = self.symbols[0]["symbol"]
         self.schema = schema
         self.aggregate = aggregate
-        self.post_aggregation = post_aggregation
         self.verbose = verbose
 
     def get_symbols(self, root_symbol):
@@ -66,8 +64,7 @@ class BitmexFuturesETL(BaseBitmexETL, FuturesETL):
         table_name = get_table_name(BITMEX, suffix=self.get_suffix)
         data = {
             "table_name": table_name,
-            "date": self.date_from,
+            "date": self.date_from.isoformat(),
             "has_multiple_symbols": True,
-            "post_aggregation": self.post_aggregation,
         }
         publish("trade-aggregator", data)

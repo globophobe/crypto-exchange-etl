@@ -34,7 +34,6 @@ class CryptoExchangeETL:
         date_from=None,
         date_to=None,
         aggregate=False,
-        post_aggregation=[],
         schema=SINGLE_SYMBOL_SCHEMA,
         verbose=False,
     ):
@@ -42,7 +41,6 @@ class CryptoExchangeETL:
         self.symbol = symbol
         self.schema = schema
         self.aggregate = aggregate
-        self.post_aggregation = post_aggregation
         self.verbose = verbose
 
         self.initialize_dates(min_date, date_from, date_to)
@@ -137,7 +135,7 @@ class CryptoExchangeETL:
             data["candles"].append(candle)
         return data
 
-    def set_firebase(self, data, cache="firestore_cache", is_complete=False, retry=5):
+    def set_firebase(self, data, attr="firestore_cache", is_complete=False, retry=5):
         document = self.date.isoformat()
         # If dict, assume correct
         if isinstance(data, pd.DataFrame):
@@ -146,13 +144,13 @@ class CryptoExchangeETL:
         # Retry n times
         r = retry - 1
         try:
-            getattr(self, cache).set(document, data)
+            getattr(self, attr).set(document, data)
         except ServiceUnavailable as exception:
             if r == 0:
                 raise exception
             else:
                 time.sleep(1)
-                self.set_firebase(data, cache=cache, is_complete=is_complete, retry=r)
+                self.set_firebase(data, attr=attr, is_complete=is_complete, retry=r)
         else:
             print(f"{self.log_prefix}: {self.date.isoformat()} OK")
 
@@ -178,7 +176,6 @@ class RESTExchangeETL(CryptoExchangeETL):
         date_to=None,
         schema=SINGLE_SYMBOL_SCHEMA,
         aggregate=False,
-        post_aggregation=[],
         verbose=False,
     ):
         super().__init__(
@@ -189,7 +186,6 @@ class RESTExchangeETL(CryptoExchangeETL):
             date_to=date_to,
             schema=schema,
             aggregate=aggregate,
-            post_aggregation=post_aggregation,
             verbose=verbose,
         )
         self.pagination_id = None
@@ -360,7 +356,7 @@ class RESTExchangeETL(CryptoExchangeETL):
         bigquery_loader = BigQueryLoader(table_name, self.date)
         bigquery_loader.write_table(self.schema, data_frame)
         # Firebase
-        data_frame = data_frame.iloc[::-1]
+        data_frame = data_frame.iloc[::-1]  # Reverse data frame
         self.set_firebase(data_frame, is_complete=is_complete)
 
     def assert_data_frame(self, data_frame, trades):

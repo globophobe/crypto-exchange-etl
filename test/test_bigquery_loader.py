@@ -14,6 +14,7 @@ from cryptotick.constants import (
     FIRESTORE_COLLECTIONS,
 )
 from cryptotick.providers.bitmex import BITMEX, XBTUSD
+from cryptotick.providers.bitmex.constants import MIN_DATE
 from cryptotick.utils import base64_encode_dict, get_env_list, set_environment
 from firebase_admin import firestore
 from firebase_admin.credentials import Certificate
@@ -76,7 +77,7 @@ def setenv():
 
 
 def test_bitmex_etl(capsys):
-    date = "2016-05-14"
+    date = MIN_DATE.isoformat()
     data = {"date": date, "symbols": XBTUSD}
     event = {"data": base64_encode_dict(data)}
     main.bitmex_perpetual(event, mock_context)
