@@ -1,0 +1,13 @@
+- scrape:
+  call: http.post
+  args: 
+    exchange: bitmex
+    symbol: XBTUSD
+- aggregate:
+  call: http.post
+  args:
+    source_table: bitmex_XBTUSD
+- candlestick:
+  call: http.post
+  args:
+    source_table: bitmex_XBTUSD_aggregated
