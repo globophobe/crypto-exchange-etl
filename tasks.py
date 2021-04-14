@@ -1,8 +1,10 @@
 import os
 import re
 
-from cryptotick.constants import BIGQUERY_LOCATION
-from cryptotick.main import (
+from invoke import task
+
+from fintick.constants import BIGQUERY_LOCATION
+from fintick.main import (
     binance_perpetual_gcp,
     bitfinex_perpetual_gcp,
     bitmex_futures_gcp,
@@ -11,8 +13,7 @@ from cryptotick.main import (
     ftx_move_gcp,
     trade_aggregator_gcp,
 )
-from cryptotick.utils import get_deploy_env_vars, set_environment
-from invoke import task
+from fintick.utils import get_container_name, get_deploy_env_vars, set_environment
 
 set_environment()
 
@@ -55,6 +56,28 @@ def deploy_all_http_functions(c):
         deploy_http_function(c, function.__name__, memory=256)  # 256MB
     for function in ALL_HTTP_FUNCTIONS:
         deploy_http_function(c, function.__name__, memory=2048)  # 2GB
+
+
+@task
+def build_container(c, hostname="asia.gcr.io", image="cryptotick"):
+    build_args = get_deploy_env_vars(pre="--build-arg ", sep=" ")
+    name = get_container_name(hostname, image)
+    # Build
+    cmd = f"""
+        docker build \
+            {build_args} \
+            --file=Dockerfile \
+            --tag={name} .
+    """
+    c.run(cmd)
+
+
+@task
+def push_container(c, hostname="asia.gcr.io", image="cryptotick"):
+    name = get_container_name(hostname, image)
+    # Push
+    cmd = f"docker push {name}"
+    c.run(cmd)
 
 
 # @task

@@ -4,8 +4,8 @@
 import typer
 
 import pathfix  # noqa: F401
-from cryptotickdata.providers.bitfinex import bitfinex_perpetual
-from cryptotickdata.utils import set_environment
+from fintick.providers.bitfinex import bitfinex_perpetual
+from fintick.utils import set_environment
 
 
 if __name__ == "__main__":

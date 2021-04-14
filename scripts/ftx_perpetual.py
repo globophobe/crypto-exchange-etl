@@ -4,8 +4,8 @@
 import typer
 
 import pathfix  # noqa: F401
-from cryptotickdata.providers.ftx import ftx_perpetual
-from cryptotickdata.utils import set_environment
+from fintick.providers.ftx import ftx_perpetual
+from fintick.utils import set_environment
 
 
 if __name__ == "__main__":

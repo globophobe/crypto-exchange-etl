@@ -1,6 +1,5 @@
 httpx
 typer
-ciso8601
 flask
 firebase-admin
 pendulum

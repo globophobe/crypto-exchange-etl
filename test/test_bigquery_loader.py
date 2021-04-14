@@ -12,9 +12,9 @@ from cryptotick.constants import (
     FIREBASE_ADMIN_CREDENTIALS,
     FIRESTORE_COLLECTIONS,
 )
-from cryptotick.providers.bitmex import BITMEX, XBTUSD
-from cryptotick.providers.bitmex.constants import MIN_DATE
 from cryptotick.utils import base64_encode_dict, get_env_list, set_environment
+from fintick.providers.bitmex import BITMEX, XBTUSD
+from fintick.providers.bitmex.constants import MIN_DATE
 from firebase_admin import firestore
 from firebase_admin.credentials import Certificate
 from google.cloud import bigquery

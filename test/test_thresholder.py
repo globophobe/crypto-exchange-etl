@@ -1,7 +1,7 @@
 from copy import deepcopy
 
-from cryptotick.aggregators.threshold.constants import NOTIONAL
-from cryptotick.aggregators.threshold.lib import (
+from fintick.aggregators.threshold.constants import NOTIONAL
+from fintick.aggregators.threshold.lib import (
     aggregate_threshold,
     get_initial_threshold_cache,
 )

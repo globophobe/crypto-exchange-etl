@@ -2,7 +2,7 @@ import datetime
 import random
 
 import pandas as pd
-from cryptotickdata.aggregators.trades.lib import aggregate_trades
+from fintick.aggregators.trades.lib import aggregate_trades
 
 from .utils import get_data_frame, get_trade
 
@@ -15,84 +15,6 @@ def test_equal_symbols_and_timestamps_and_ticks():
     trades = [{"symbol": "A", "is_equal_timestamp": True, "ticks": [1, 1]}]
     samples = get_samples(trades)
     assert len(samples) == 1
-
-
-def test_monotonically_increasing():
-    trades = [
-        {
-            "symbol": "A",
-            "is_equal_timestamp": True,
-            "prices": [1, 2, 3],
-            "ticks": [1, 1, 1],
-        }
-    ]
-    samples = get_samples(trades)
-    assert len(samples) == 1
-
-
-def test_not_monotonically_increasing():
-    trades = [
-        {
-            "symbol": "A",
-            "is_equal_timestamp": True,
-            "prices": [1, 2, 1],
-            "ticks": [1, 1, 1],
-        }
-    ]
-    samples = get_samples(trades)
-    assert len(samples) == 2
-
-
-def test_monotonically_decreasing():
-    trades = [
-        {
-            "symbol": "A",
-            "is_equal_timestamp": True,
-            "prices": [3, 2, 1],
-            "ticks": [-1, -1, -1],
-        }
-    ]
-    samples = get_samples(trades)
-    assert len(samples) == 1
-
-
-def test_not_monotonically_decreasing():
-    trades = [
-        {
-            "symbol": "A",
-            "is_equal_timestamp": True,
-            "prices": [3, 2, 3],
-            "ticks": [-1, -1, -1],
-        }
-    ]
-    samples = get_samples(trades)
-    assert len(samples) == 2
-
-
-def test_monotonically_increasing_with_wrong_tick_rule():
-    trades = [
-        {
-            "symbol": "A",
-            "is_equal_timestamp": True,
-            "prices": [1, 2, 3],
-            "ticks": [-1, -1, -1],
-        }
-    ]
-    samples = get_samples(trades)
-    assert len(samples) == 3
-
-
-def test_monotonically_decreasing_with_wrong_tick_rule():
-    trades = [
-        {
-            "symbol": "A",
-            "is_equal_timestamp": True,
-            "prices": [3, 2, 1],
-            "ticks": [1, 1, 1],
-        }
-    ]
-    samples = get_samples(trades)
-    assert len(samples) == 3
 
 
 def test_equal_symbols_and_timestamps_and_not_equal_ticks():

@@ -1,8 +1,8 @@
 import datetime
 
-from cryptotick.providers.bitmex import BITMEX, XBTUSD, BitmexPerpetualETL
-from cryptotick.providers.bitmex.constants import MIN_DATE
-from cryptotick.s3downloader import HistoricalDownloader
+from fintick.providers.bitmex import BITMEX, XBTUSD, BitmexPerpetualETL
+from fintick.providers.bitmex.constants import MIN_DATE
+from fintick.s3downloader import HistoricalDownloader
 
 SYMBOLS = [XBTUSD]
 

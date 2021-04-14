@@ -4,8 +4,8 @@
 import typer
 
 import pathfix  # noqa: F401
-from cryptotickdata.aggregators.updater import updater
-from cryptotickdata.utils import set_environment
+from fintick.aggregators.updater import updater
+from fintick.utils import set_environment
 
 
 if __name__ == "__main__":
