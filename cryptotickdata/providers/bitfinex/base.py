@@ -37,13 +37,13 @@ class BitfinexMixin(CryptoTickNonSequentialIntegerMixin):
         return 0
 
     def get_price(self, trade):
-        return float(trade[3])
+        return trade[3]
 
     def get_volume(self, trade):
-        return float(trade[3]) * float(abs(trade[2]))
+        return self.get_price(trade) * self.get_notional(trade)
 
     def get_notional(self, trade):
-        return float(abs(trade[2]))
+        return abs(trade[2])
 
     def get_tick_rule(self, trade):
         # Buy side indicates a down-tick because the maker was a buy order and

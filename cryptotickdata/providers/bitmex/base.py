@@ -1,10 +1,11 @@
 import datetime
+from decimal import Decimal
 
+import numpy as np
 import pandas as pd
 
 from ...bqloader import MULTIPLE_SYMBOL_SCHEMA
 from ...cryptotickdata import CryptoTickDailyS3Mixin
-from ...s3downloader import calculate_index, calculate_notional
 from .api import (
     format_bitmex_api_timestamp,
     get_active_futures,
@@ -12,8 +13,8 @@ from .api import (
     get_expired_futures,
     get_trades,
 )
-from .constants import BCHUSD, BITMEX, ETHUSD, LTCUSD, S3_URL, XBTUSD, XRPUSD, uBTC
-from .lib import calc_notional
+from .constants import BITMEX, S3_URL
+from .lib import calculate_index
 
 
 class BitmexMixin:
@@ -31,30 +32,22 @@ class BitmexMixin:
         return 0  # No nanoseconds
 
     def get_price(self, trade):
-        return float(trade["price"])
+        return trade["price"]
 
     def get_volume(self, trade):
-        return float(trade["size"])
+        foreign_notional = trade["foreignNotional"]
+        if isinstance(foreign_notional, int):
+            return Decimal(foreign_notional)
+        return foreign_notional
 
     def get_notional(self, trade):
-        volume = self.get_volume(trade)
-        price = self.get_price(trade)
-        if self.symbol == XBTUSD:
-            return volume / price
-        elif self.symbol.startswith(ETHUSD) or self.symbol.startswith(BCHUSD):
-            return volume * price * uBTC
-        elif self.symbol.startswith(LTCUSD):
-            return volume * price * uBTC * 2
-        elif self.symbol == XRPUSD:
-            return volume * price * uBTC / 20
-        else:
-            raise NotImplementedError
+        return self.get_volume(trade) / self.get_price(trade)
 
     def get_tick_rule(self, trade):
         return 1 if trade["side"] == "Buy" else -1
 
     def get_index(self, trade):
-        return 0  # No index
+        return np.nan  # No index, set per partition
 
 
 class BitmexRESTMixin(BitmexMixin):
@@ -64,11 +57,28 @@ class BitmexRESTMixin(BitmexMixin):
     def iter_api(self, symbol, pagination_id, log_prefix):
         return get_trades(symbol, self.timestamp_from, pagination_id, log_prefix)
 
+    def get_data_frame(self, trades):
+        data_frame = super().get_data_frame(trades)
+        # REST API is reversed
+        data_frame["index"] = data_frame.index.values[::-1]
+        return data_frame
+
 
 class BitmexDailyS3Mixin(CryptoTickDailyS3Mixin, BitmexMixin):
     def get_url(self, date):
         date_string = date.strftime("%Y%m%d")
         return f"{S3_URL}{date_string}.csv.gz"
+
+    @property
+    def get_columns(self):
+        return (
+            "trdMatchID",
+            "symbol",
+            "timestamp",
+            "price",
+            "tickDirection",
+            "foreignNotional",
+        )
 
     def parse_dataframe(self, data_frame):
         # No false positives.
@@ -81,10 +91,12 @@ class BitmexDailyS3Mixin(CryptoTickDailyS3Mixin, BitmexMixin):
         data_frame["timestamp"] = pd.to_datetime(
             data_frame["timestamp"], format="%Y-%m-%dD%H:%M:%S.%f"
         )
-        data_frame = super().parse_dataframe(data_frame)
-        # Notional after other transforms.
-        data_frame = calculate_notional(data_frame, calc_notional)
-        return data_frame
+        # BitMEX XBTUSD size is volume. However, quanto contracts are not
+        data_frame = data_frame.rename(
+            columns={"trdMatchID": "uid", "foreignNotional": "volume"}
+        )
+        data_frame = calculate_index(data_frame)
+        return super().parse_dataframe(data_frame)
 
 
 class BitmexDailyMultiSymbolS3Mixin(BitmexDailyS3Mixin):

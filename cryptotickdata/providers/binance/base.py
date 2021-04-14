@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from ...cryptotickdata import CryptoTickSequentialIntegerMixin
 from .api import get_binance_api_timestamp, get_trades
 from .constants import BINANCE
@@ -22,13 +24,13 @@ class BinanceMixin(CryptoTickSequentialIntegerMixin):
         return self.get_timestamp(trade).nanosecond
 
     def get_price(self, trade):
-        return float(trade["price"])
+        return Decimal(trade["price"])
 
     def get_volume(self, trade):
         return self.get_price(trade) * self.get_notional(trade)
 
     def get_notional(self, trade):
-        return float(trade["qty"])
+        return Decimal(trade["qty"])
 
     def get_tick_rule(self, trade):
         # If isBuyerMaker is true, order was filled by sell order

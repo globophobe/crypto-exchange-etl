@@ -1,4 +1,6 @@
+import json
 import time
+from decimal import Decimal
 
 import httpx
 from ciso8601 import parse_datetime
@@ -45,14 +47,15 @@ def get_bybit_api_response(url, pagination_id=None, retry=5):
     try:
         response = httpx.get(get_bybit_api_url(url, pagination_id))
         if response.status_code == 200:
-            data = response.json()
+            result = response.read()
+            data = json.loads(result, parse_float=Decimal)
             assert data["ret_msg"] == "OK"
-            result = data["result"]
+            res = data["result"]
             # If no pagination_id, ascending order
             if pagination_id:
                 # Descending order, please
-                result.reverse()
-            return result
+                res.reverse()
+            return res
         else:
             raise Exception(f"HTTP {response.status_code}: {response.reason_phrase}")
     except httpx.ReadTimeout:

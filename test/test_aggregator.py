@@ -2,20 +2,97 @@ import datetime
 import random
 
 import pandas as pd
-from cryptotick.aggregators.trades.lib import aggregate_trades
+from cryptotickdata.aggregators.trades.lib import aggregate_trades
 
 from .utils import get_data_frame, get_trade
 
 
 def get_samples(trades):
-    data_frame, has_multiple_symbols = get_data_frame(trades)
-    return aggregate_trades(data_frame, has_multiple_symbols=has_multiple_symbols)
+    return aggregate_trades(get_data_frame(trades))
 
 
 def test_equal_symbols_and_timestamps_and_ticks():
     trades = [{"symbol": "A", "is_equal_timestamp": True, "ticks": [1, 1]}]
     samples = get_samples(trades)
     assert len(samples) == 1
+
+
+def test_monotonically_increasing():
+    trades = [
+        {
+            "symbol": "A",
+            "is_equal_timestamp": True,
+            "prices": [1, 2, 3],
+            "ticks": [1, 1, 1],
+        }
+    ]
+    samples = get_samples(trades)
+    assert len(samples) == 1
+
+
+def test_not_monotonically_increasing():
+    trades = [
+        {
+            "symbol": "A",
+            "is_equal_timestamp": True,
+            "prices": [1, 2, 1],
+            "ticks": [1, 1, 1],
+        }
+    ]
+    samples = get_samples(trades)
+    assert len(samples) == 2
+
+
+def test_monotonically_decreasing():
+    trades = [
+        {
+            "symbol": "A",
+            "is_equal_timestamp": True,
+            "prices": [3, 2, 1],
+            "ticks": [-1, -1, -1],
+        }
+    ]
+    samples = get_samples(trades)
+    assert len(samples) == 1
+
+
+def test_not_monotonically_decreasing():
+    trades = [
+        {
+            "symbol": "A",
+            "is_equal_timestamp": True,
+            "prices": [3, 2, 3],
+            "ticks": [-1, -1, -1],
+        }
+    ]
+    samples = get_samples(trades)
+    assert len(samples) == 2
+
+
+def test_monotonically_increasing_with_wrong_tick_rule():
+    trades = [
+        {
+            "symbol": "A",
+            "is_equal_timestamp": True,
+            "prices": [1, 2, 3],
+            "ticks": [-1, -1, -1],
+        }
+    ]
+    samples = get_samples(trades)
+    assert len(samples) == 3
+
+
+def test_monotonically_decreasing_with_wrong_tick_rule():
+    trades = [
+        {
+            "symbol": "A",
+            "is_equal_timestamp": True,
+            "prices": [3, 2, 1],
+            "ticks": [1, 1, 1],
+        }
+    ]
+    samples = get_samples(trades)
+    assert len(samples) == 3
 
 
 def test_equal_symbols_and_timestamps_and_not_equal_ticks():
@@ -83,12 +160,13 @@ def test_equal_ticks_and_not_equal_nanoseconds():
     assert len(samples) == 2
 
 
-def test_slippage():
+def test_vwap():
     now = datetime.datetime.utcnow()
     trades = [
-        get_trade(timestamp=now, price=1, notional=10, tick_rule=1),
-        get_trade(timestamp=now, price=2, notional=10, tick_rule=1),
+        get_trade(timestamp=now, price=1, notional=1, tick_rule=1),
+        get_trade(timestamp=now, price=2, notional=1, tick_rule=1),
+        get_trade(timestamp=now, price=3, notional=1, tick_rule=1),
     ]
     data_frame = pd.DataFrame(trades)
     df = aggregate_trades(data_frame)
-    assert df.loc[0].slippage == 10
+    assert df.loc[0].vwap == 2

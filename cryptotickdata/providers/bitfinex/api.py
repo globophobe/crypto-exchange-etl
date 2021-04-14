@@ -1,5 +1,7 @@
 import datetime
+import json
 import time
+from decimal import Decimal
 
 import httpx
 import pandas as pd
@@ -45,7 +47,8 @@ def get_bitfinex_api_response(url, pagination_id=None, retry=5):
     try:
         response = httpx.get(get_bitfinex_api_url(url, pagination_id))
         if response.status_code == 200:
-            return response.json()
+            result = response.read()
+            return json.loads(result, parse_float=Decimal)
         else:
             raise Exception(f"HTTP {response.status_code}: {response.reason_phrase}")
     except httpx.ReadTimeout:

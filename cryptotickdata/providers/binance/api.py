@@ -52,6 +52,9 @@ def get_binance_api_response(url, pagination_id=None, retry=5):
         if response.status_code == 200:
             data = response.json()
             data.reverse()  # Descending order, please
+            import pdb
+
+            pdb.set_trace()
             return data
         else:
             raise Exception(f"HTTP {response.status_code}: {response.reason_phrase}")

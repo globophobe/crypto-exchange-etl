@@ -2,10 +2,8 @@ import httpx
 import pandas as pd
 
 from ...cryptotickdata import CryptoTickDailyS3Mixin, CryptoTickSequentialIntegerMixin
-from ...s3downloader import calculate_notional
 from .api import get_bybit_api_timestamp, get_trades
 from .constants import BYBIT, MAX_RESULTS, S3_URL
-from .lib import calc_notional
 
 
 class BybitMixin:
@@ -23,10 +21,10 @@ class BybitMixin:
         return 0  # No nanoseconds
 
     def get_price(self, trade):
-        return float(trade["price"])
+        return trade["price"]
 
     def get_volume(self, trade):
-        return float(trade["qty"])
+        return trade["qty"]
 
     def get_notional(self, trade):
         return self.get_volume(trade) / self.get_price(trade)
@@ -60,6 +58,10 @@ class BybitDailyS3Mixin(CryptoTickDailyS3Mixin):
         else:
             print(f"{self.exchange.capitalize()} {self.symbol}: No data")
 
+    @property
+    def get_columns(self):
+        return ("trdMatchID", "timestamp", "price", "size", "tickDirection")
+
     def parse_dataframe(self, data_frame):
         # No false positives.
         # Source: https://pandas.pydata.org/pandas-docs/stable/user_guide/
@@ -69,6 +71,5 @@ class BybitDailyS3Mixin(CryptoTickDailyS3Mixin):
         data_frame = data_frame.iloc[::-1]
         data_frame["index"] = data_frame.index.values[::-1]
         data_frame["timestamp"] = pd.to_datetime(data_frame["timestamp"], unit="s")
-        data_frame = super().parse_dataframe(data_frame)
-        data_frame = calculate_notional(data_frame, calc_notional)
-        return data_frame
+        data_frame = data_frame.rename(columns={"trdMatchID": "uid", "size": "volume"})
+        return super().parse_dataframe(data_frame)

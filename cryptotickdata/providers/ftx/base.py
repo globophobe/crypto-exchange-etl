@@ -27,13 +27,13 @@ class FTXMixin:
         return 0  # No nanoseconds
 
     def get_price(self, trade):
-        return float(trade["price"])
+        return trade["price"]
 
     def get_volume(self, trade):
         return self.get_price(trade) * self.get_notional(trade)
 
     def get_notional(self, trade):
-        return float(trade["size"])
+        return trade["size"]
 
     def get_tick_rule(self, trade):
         return 1 if trade["side"] == "buy" else -1

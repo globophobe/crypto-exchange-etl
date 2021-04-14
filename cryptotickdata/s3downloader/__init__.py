@@ -1,10 +1,8 @@
 from .lib import (
-    calculate_index,
     calculate_notional,
     calculate_tick_rule,
     row_to_json,
-    set_columns,
-    set_types,
+    set_dtypes,
     strip_nanoseconds,
     utc_timestamp,
 )
@@ -15,9 +13,7 @@ __all__ = [
     "strip_nanoseconds",
     "calculate_notional",
     "calculate_tick_rule",
-    "calculate_index",
-    "set_types",
-    "set_columns",
+    "set_dtypes",
     "row_to_json",
     "HistoricalDownloader",
 ]

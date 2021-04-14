@@ -1,4 +1,6 @@
+import json
 import time
+from decimal import Decimal
 
 import httpx
 from ciso8601 import parse_datetime
@@ -87,7 +89,9 @@ def get_ftx_api_response(url, pagination_id=None, retry=5):
     try:
         response = httpx.get(get_ftx_api_url(url, pagination_id))
         if response.status_code == 200:
+            result = response.read()
             data = response.json()
+            data = json.loads(result, parse_float=Decimal)
             if data["success"]:
                 return data["result"]
             else:

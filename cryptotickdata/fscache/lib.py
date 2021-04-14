@@ -18,7 +18,7 @@ def get_collection_name(exchange, suffix=""):
 
 def firestore_data(data, strip_date=True):
     data = copy(data)
-    # Firestore doesn't like datetime.date
+    # Firestore doesn't support datetime.date only datetime.datetime
     if strip_date:
         if "date" in data:
             del data["date"]
@@ -35,7 +35,7 @@ def firestore_data(data, strip_date=True):
                 except AttributeError:
                     value._nanosecond = 0
             data[key] = value
-    # Float
+    # Decimal
     for key in (
         "lastPrice",
         "open",
@@ -57,7 +57,13 @@ def firestore_data(data, strip_date=True):
         "topNBuyNotional",
     ):
         if key in data:
-            data[key] = float(data[key])
+            # Firestore does not support the decimal type,
+            # so serialize to str
+            value = data[key]
+            if isinstance(value, dict):
+                data[key] = firestore_data(value)
+            else:
+                data[key] = str(value)
     # Int
     for key in (
         "nanoseconds",

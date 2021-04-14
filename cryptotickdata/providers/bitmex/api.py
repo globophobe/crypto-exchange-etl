@@ -1,6 +1,7 @@
 import json
 import re
 import time
+from decimal import Decimal
 
 import httpx
 from ciso8601 import parse_datetime
@@ -116,7 +117,8 @@ def get_bitmex_api_response(url, pagination_id=None, retry=5):
     try:
         response = httpx.get(get_bitmex_api_url(url, pagination_id))
         if response.status_code == 200:
-            return response.json()
+            result = response.read()
+            return json.loads(result, parse_float=Decimal)
         elif response.status_code == 429:
             retry = response.headers.get("Retry-After", 1)
             time.sleep(int(retry))

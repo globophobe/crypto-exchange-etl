@@ -1,6 +1,5 @@
 from datetime import timezone
-
-import numpy as np
+from decimal import Decimal
 
 
 def utc_timestamp(data_frame):
@@ -27,8 +26,8 @@ def strip_nanoseconds(data_frame):
     return data_frame
 
 
-def calculate_notional(data_frame, func):
-    data_frame["notional"] = data_frame.apply(func, axis=1)
+def calculate_notional(data_frame):
+    data_frame["notional"] = data_frame.apply(lambda x: x.volume / x.price, axis=1)
     return data_frame
 
 
@@ -40,30 +39,16 @@ def calculate_tick_rule(data_frame):
     return data_frame
 
 
-def calculate_index(data_frame):
-    symbols = data_frame.symbol.unique()
-    data_frame["index"] = np.nan  # B/C pandas index
-    for symbol in symbols:
-        index = data_frame.index[data_frame.symbol == symbol]
-        # 0-based index according to symbol
-        data_frame.loc[index, "index"] = index.values - index.values[0]
+def set_dtypes(data_frame):
+    df = data_frame.astype({"index": "int64"})
+    for column in ("price", "volume"):
+        df = set_type_decimal(df, column)
+    return df
+
+
+def set_type_decimal(data_frame, column):
+    data_frame[column] = data_frame[column].apply(Decimal)
     return data_frame
-
-
-def set_columns(data_frame):
-    data_frame = data_frame.rename(columns={"trdMatchID": "uid", "size": "volume"})
-    return data_frame
-
-
-def set_types(data_frame):
-    return data_frame.astype(
-        {
-            "price": "float64",
-            "volume": "float64",
-            "notional": "float64",
-            "index": "int64",
-        }
-    )
 
 
 def row_to_json(row):

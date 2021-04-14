@@ -45,8 +45,6 @@ class BaseTradeAggregator(BaseAggregator):
         return bigquery_loader.read_table(sql, self.job_config)
 
     def process_data_frame(self, data_frame):
-        df = aggregate_trades(
-            data_frame, has_multiple_symbols=self.has_multiple_symbols
-        )
+        df = aggregate_trades(data_frame)
         df["index"] = df.index
         return df[self.columns]

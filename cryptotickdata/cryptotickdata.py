@@ -9,6 +9,7 @@ from google.cloud import bigquery
 
 from .bqloader import (
     MULTIPLE_SYMBOL_SCHEMA,
+    SINGLE_SYMBOL_ORDER_BY,
     SINGLE_SYMBOL_SCHEMA,
     BigQueryDaily,
     BigQueryHourly,
@@ -18,10 +19,10 @@ from .bqloader import (
 from .fscache import FirestoreCache, firestore_data, get_collection_name
 from .s3downloader import (
     HistoricalDownloader,
+    calculate_notional,
     calculate_tick_rule,
     row_to_json,
-    set_columns,
-    set_types,
+    set_dtypes,
     strip_nanoseconds,
     utc_timestamp,
 )
@@ -110,28 +111,31 @@ class CryptoTick:
     def get_firebase_data(self, df):
         if len(df):
             open_price = df.head(1).iloc[0]
-            low_price = df.loc[df["price"].idxmin()]
-            high_price = df.loc[df["price"].idxmax()]
+            # Can't use idxmin/idxmax with Decimal type
+            low_price = df.loc[df["price"].astype(float).idxmin()]
+            high_price = df.loc[df["price"].astype(float).idxmax()]
             close_price = df.tail(1).iloc[0]
             buy_side = df[df["tickRule"] == 1]
-            volume = float(df["volume"].sum())
-            buy_volume = float(buy_side["volume"].sum())
-            notional = float(df["notional"].sum())
-            buy_notional = float(buy_side["notional"].sum())
+            volume = df["volume"].sum()
+            buy_volume = buy_side["volume"].sum()
+            notional = df["notional"].sum()
+            buy_notional = buy_side["notional"].sum()
             ticks = len(df)
             buy_ticks = len(buy_side)
-            return {
-                "open": firestore_data(row_to_json(open_price)),
-                "low": firestore_data(row_to_json(low_price)),
-                "high": firestore_data(row_to_json(high_price)),
-                "close": firestore_data(row_to_json(close_price)),
-                "volume": volume,
-                "buyVolume": buy_volume,
-                "notional": notional,
-                "buyNotional": buy_notional,
-                "ticks": ticks,
-                "buyTicks": buy_ticks,
-            }
+            return firestore_data(
+                {
+                    "open": row_to_json(open_price),
+                    "low": row_to_json(low_price),
+                    "high": row_to_json(high_price),
+                    "close": row_to_json(close_price),
+                    "volume": volume,
+                    "buyVolume": buy_volume,
+                    "notional": notional,
+                    "buyNotional": buy_notional,
+                    "ticks": ticks,
+                    "buyTicks": buy_ticks,
+                }
+            )
         return {}
 
     def set_firebase(self, data, attr="firestore_cache", is_complete=False, retry=5):
@@ -257,7 +261,6 @@ class CryptoTickREST(CryptoTick):
     def get_data_frame(self, trades):
         columns = get_schema_columns(self.schema)
         data_frame = pd.DataFrame(trades, columns=columns)
-        data_frame = set_types(data_frame)
         self.assert_data_frame(data_frame, trades)
         return data_frame
 
@@ -274,9 +277,7 @@ class CryptoTickREST(CryptoTick):
 
 
 class CryptoTickSequentialIntegerMixin:
-    """
-    Binance, ByBit, and Coinbase REST API
-    """
+    """Binance, ByBit, and Coinbase REST API"""
 
     def get_pagination_id(self, data=None):
         pagination_id = None
@@ -311,9 +312,7 @@ class CryptoTickSequentialIntegerMixin:
 
 
 class CryptoTickNonSequentialIntegerMixin:
-    """
-    Bitfinex and FTX REST API
-    """
+    """Bitfinex and FTX REST API"""
 
     def assert_data_frame(self, data_frame, trades):
         super().assert_data_frame(data_frame, trades)
@@ -499,7 +498,13 @@ class CryptoTickMultiSymbolDailyMixin(CryptoTickDailyMixin):
 
 
 class CryptoTickDailyS3Mixin(CryptoTickDailyMixin):
+    """BitMEX and ByBit S3"""
+
     def get_url(self, partition):
+        raise NotImplementedError
+
+    @property
+    def get_columns(self):
         raise NotImplementedError
 
     def main(self):
@@ -510,7 +515,7 @@ class CryptoTickDailyS3Mixin(CryptoTickDailyMixin):
                 url = self.get_url(partition)
                 if self.verbose:
                     print(f"{self.log_prefix}: downloading {document}")
-                data_frame = HistoricalDownloader(url).main()
+                data_frame = HistoricalDownloader(url, columns=self.get_columns).main()
                 if data_frame is not None:
                     df = self.filter_dataframe(data_frame)
                     if len(df):
@@ -527,19 +532,19 @@ class CryptoTickDailyS3Mixin(CryptoTickDailyMixin):
                     break
 
     def filter_dataframe(self, data_frame):
-        return data_frame[data_frame.symbol == self.symbol]
+        if "symbol" in data_frame.columns:
+            return data_frame[data_frame.symbol == self.symbol]
+        return data_frame
 
     def parse_dataframe(self, data_frame):
-        # Transforms
+        data_frame = set_dtypes(data_frame)
         data_frame = utc_timestamp(data_frame)
         data_frame = strip_nanoseconds(data_frame)
-        data_frame = set_columns(data_frame)
+        data_frame = calculate_notional(data_frame)
         data_frame = calculate_tick_rule(data_frame)
         return data_frame
 
     def write(self, data_frame, is_complete=False):
-        # Types
-        data_frame = set_types(data_frame)
         # Columns
         columns = get_schema_columns(self.schema)
         data_frame = data_frame[columns]
@@ -588,7 +593,7 @@ class CryptoTickDailyPartitionFromHourlyMixin(
         sql = f"""
             SELECT * FROM {table_id}
             WHERE {self.where_clause}
-            ORDER BY timestamp, nanoseconds, index;
+            ORDER BY {self.order_by}
         """
         partition_decorator = self.get_partition_decorator(self.partition)
         bigquery_loader = self.get_bigquery_loader(table_id, partition_decorator)
@@ -601,6 +606,10 @@ class CryptoTickDailyPartitionFromHourlyMixin(
                 bigquery.ScalarQueryParameter("date", "DATE", self.partition),
             ]
         )
+
+    @property
+    def order_by(self):
+        return SINGLE_SYMBOL_ORDER_BY
 
     @property
     def where_clause(self):

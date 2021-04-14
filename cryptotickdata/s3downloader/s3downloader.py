@@ -7,17 +7,13 @@ import pandas as pd
 
 
 class HistoricalDownloader:
-    def __init__(
-        self,
-        url,
-        columns=("trdMatchID", "symbol", "timestamp", "size", "tickDirection", "price"),
-    ):
+    def __init__(self, url, columns):
         self.url = url
         self.columns = columns
 
     def main(self):
         # Streaming downloads with boto3, and httpx gave many EOFErrors.
-        # No problem with regular download.
+        # This doesn't seem to be a problem with regular downloads.
         response = httpx.get(self.url)
         if response.status_code == 200:
             temp_file = NamedTemporaryFile()
@@ -40,6 +36,7 @@ class HistoricalDownloader:
                 usecols=self.columns,
                 engine="python",
                 compression="gzip",
+                dtype={col: "str" for col in self.columns},
             )
         except EOFError:
             print(f"EOFError: {filename}")
@@ -47,6 +44,9 @@ class HistoricalDownloader:
         return data_frame
 
     def _extract_force(self, filename):
+        # Forcible extraction was occassionally necessary with streaming,
+        # but hasn't been a problem with regular downloads.
+        # Perhaps, this function can be deleted.
         lines = []
         try:
             with gzip.open(filename, "rt") as f:

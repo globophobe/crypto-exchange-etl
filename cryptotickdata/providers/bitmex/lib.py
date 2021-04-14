@@ -1,18 +1,11 @@
-import re
-
-from .constants import BCHUSD, ETHUSD, LTCUSD, XBTUSD, XRPUSD, uBTC
-
-XBT_FUTURES_REGEX = re.compile(r"^XBT(\w)\d+$")
+import numpy as np
 
 
-def calc_notional(x):
-    if x.symbol == XBTUSD or XBT_FUTURES_REGEX.match(x.symbol):
-        return x.volume / x.price
-    elif x.symbol.startswith(ETHUSD) or x.symbol.startswith(BCHUSD):
-        return x.volume * x.price * uBTC
-    elif x.symbol.startswith(LTCUSD):
-        return x.volume * x.price * uBTC * 2
-    elif x.symbol == XRPUSD:
-        return x.volume * x.price * uBTC / 20
-    else:
-        raise NotImplementedError
+def calculate_index(data_frame):
+    symbols = data_frame.symbol.unique()
+    data_frame["index"] = np.nan  # B/C pandas index
+    for symbol in symbols:
+        index = data_frame.index[data_frame.symbol == symbol]
+        # 0-based index according to symbol
+        data_frame.loc[index, "index"] = index.values - index.values[0]
+    return data_frame

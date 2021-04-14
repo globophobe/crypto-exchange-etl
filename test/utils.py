@@ -9,7 +9,6 @@ def get_trade(
     timestamp=None,
     nanoseconds=None,
     price=None,
-    slippage=0,
     notional=None,
     tick_rule=None,
 ):
@@ -20,7 +19,6 @@ def get_trade(
         "timestamp": timestamp or datetime.datetime.now(),
         "nanoseconds": nanoseconds or 0,
         "price": p,
-        "slippage": slippage,
         "volume": volume,
         "notional": n,
         "tickRule": tick_rule or random.choice((1, -1)),
@@ -31,19 +29,32 @@ def get_trade(
 
 
 def get_trades(
-    ticks, symbol=None, notional=None, is_equal_timestamp=False, nanoseconds=None
+    ticks,
+    symbol=None,
+    prices=[],
+    is_equal_timestamp=False,
+    nanoseconds=None,
+    notional=None,
 ):
     """Generate random trades"""
     trade = get_trade(
-        symbol=symbol, notional=notional, nanoseconds=nanoseconds, tick_rule=ticks[0]
+        symbol=symbol,
+        price=prices[0] if len(prices) else None,
+        nanoseconds=nanoseconds,
+        notional=notional,
+        tick_rule=ticks[0],
     )
     trades = [trade]
-    for tick in ticks[1:]:
+    for index, tick in enumerate(ticks[1:]):
+        if len(prices):
+            p = prices[index + 1]
+        else:
+            p = trade["price"] + (round(random.random() * 0.1, 2)) * tick
         t = get_trade(
             symbol=symbol,
             timestamp=trade["timestamp"] if is_equal_timestamp else None,
             nanoseconds=nanoseconds or 0,
-            price=trade["price"] + (round(random.random() * 0.1, 2)) * tick,
+            price=p,
             notional=notional,
             tick_rule=tick,
         )
@@ -52,17 +63,9 @@ def get_trades(
 
 
 def get_data_frame(all_trades):
-    symbols = [trade["symbol"] for trade in all_trades if "symbol" in trade]
-    if len(symbols):
-        # All or None
-        assert len(all_trades) == len(symbols)
-        first_symbol = symbols[0]
-        has_multiple_symbols = all([first_symbol == symbol for symbol in symbols])
-    else:
-        has_multiple_symbols = False
     trades = []
     for trade in all_trades:
+        prices = trade.pop("prices", [])
         ticks = trade.pop("ticks")
-        trades += get_trades(ticks, **trade)
-    data_frame = pd.DataFrame(trades)
-    return data_frame, has_multiple_symbols
+        trades += get_trades(ticks, prices=prices, **trade)
+    return pd.DataFrame(trades)

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from ...cryptotickdata import CryptoTickSequentialIntegerMixin
 from .api import get_coinbase_api_timestamp, get_trades
 from .constants import COINBASE
@@ -21,13 +23,13 @@ class CoinbaseMixin(CryptoTickSequentialIntegerMixin):
         return 0
 
     def get_price(self, trade):
-        return float(trade["price"])
+        return Decimal(trade["price"]).normalize()
 
     def get_volume(self, trade):
         return self.get_price(trade) * self.get_notional(trade)
 
     def get_notional(self, trade):
-        return float(trade["size"])
+        return Decimal(trade["size"]).normalize()
 
     def get_tick_rule(self, trade):
         # Buy side indicates a down-tick because the maker was a buy order and
