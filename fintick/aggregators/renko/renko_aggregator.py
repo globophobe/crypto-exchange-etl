@@ -1,10 +1,10 @@
 from ...utils import parse_period_from_to
-from .candles import CandleAggregatorDailyPartition, CandleAggregatorHourlyPartition
+from .renko import RenkoAggregatorDailyPartition, RenkoAggregatorHourlyPartition
 
 
-def candle_aggregator(
+def renko_aggregator(
     source_table: str = None,
-    timeframe: str = None,
+    box_size: float = 1.0,
     top_n: int = 0,
     period_from: str = None,
     period_to: str = None,
@@ -12,15 +12,15 @@ def candle_aggregator(
     verbose: bool = False,
 ):
     assert source_table, 'Required param "source_table" not provided'
-    assert timeframe, 'Required param "timeframe" not provided'
+    assert box_size, 'Required param "box_size" not provided'
     timestamp_from, timestamp_to, date_from, date_to = parse_period_from_to(
         period_from=period_from, period_to=period_to
     )
     # Daily partitions, then hourly partitions
     if date_from and date_to:
-        CandleAggregatorDailyPartition(
+        RenkoAggregatorDailyPartition(
             source_table,
-            timeframe=timeframe,
+            box_size=box_size,
             top_n=top_n,
             period_from=date_from,
             period_to=date_to,
@@ -28,9 +28,9 @@ def candle_aggregator(
             verbose=verbose,
         ).main()
     if timestamp_from and timestamp_to:
-        CandleAggregatorHourlyPartition(
+        RenkoAggregatorHourlyPartition(
             f"{source_table}_hot",
-            timeframe=timeframe,
+            box_size=box_size,
             top_n=top_n,
             period_from=timestamp_from,
             period_to=timestamp_to,

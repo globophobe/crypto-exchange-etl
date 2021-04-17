@@ -1,7 +1,7 @@
 import pandas as pd
 import pendulum
 
-from ..lib import aggregate_bars
+from ..lib import aggregate_rows
 
 
 def get_initial_candle_cache(data_frame):
@@ -53,7 +53,7 @@ def aggregate_candles(
                 open_price = cache[symbols[0]]
             else:
                 open_price = cache["open"]
-            sample = aggregate_bars(
+            sample = aggregate_rows(
                 df, timestamp=start, open_price=open_price, top_n=top_n
             )
             cache["open"] = sample["close"]

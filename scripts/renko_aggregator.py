@@ -4,10 +4,10 @@
 import typer
 
 import pathfix  # noqa: F401
-from fintick.aggregators import renko_aggregator
+from fintick.aggregators import candle_aggregator
 from fintick.utils import set_environment
 
 
 if __name__ == "__main__":
     set_environment()
-    typer.run(renko_aggregator)
+    typer.run(candle_aggregator)

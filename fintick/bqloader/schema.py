@@ -88,10 +88,9 @@ MULTIPLE_SYMBOL_BAR_SCHEMA = (
     [
         bigquery.SchemaField("symbol", "STRING", "REQUIRED"),
     ]
-    + SINGLE_SYMBOL_BAR_SCHEMA[2:-1]
+    + SINGLE_SYMBOL_BAR_SCHEMA
     + [
         bigquery.SchemaField("expiry", "TIMESTAMP", "REQUIRED"),
-        bigquery.SchemaField("index", "INTEGER", "REQUIRED"),
     ]
 )
 
@@ -102,3 +101,14 @@ SINGLE_SYMBOL_THRESHOLD_SCHEMA = [
 MULTIPLE_SYMBOL_THRESHOLD_SCHEMA = [
     bigquery.SchemaField("uid", "STRING", "REQUIRED")  # For join
 ] + MULTIPLE_SYMBOL_BAR_SCHEMA
+
+SINGLE_SYMBOL_RENKO_SCHEMA = [
+    bigquery.SchemaField("timestamp", "TIMESTAMP", "REQUIRED"),
+    bigquery.SchemaField("nanoseconds", "INTEGER", "REQUIRED"),
+    bigquery.SchemaField("level", "INTEGER", "REQUIRED"),
+    bigquery.SchemaField("change", "INTEGER", "REQUIRED"),
+] + SINGLE_SYMBOL_BAR_SCHEMA[5:]
+
+MULTIPLE_SYMBOL_RENKO_SCHEMA = [
+    bigquery.SchemaField("symbol", "STRING", "REQUIRED"),
+] + SINGLE_SYMBOL_RENKO_SCHEMA

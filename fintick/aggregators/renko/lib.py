@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..lib import aggregate_rows, get_next_cache, merge_cache
+from ..lib import get_next_cache, get_top_n, merge_cache
 
 
 def get_level(price, box_size):
@@ -75,20 +75,17 @@ def aggregate_renko(data_frame, cache, box_size, top_n=10, level_func=get_level)
             cache, high, low, row.price, box_size, level_func=level_func
         )
         if change:
-            sample = aggregate_rows(
-                data_frame,
+            df = data_frame.iloc[start:index]
+            sample = aggregate(
+                df,
                 level,
-                start,
-                stop=index,
+                change,
                 top_n=top_n,
-                extra={"level": level},
             )
             if "nextDay" in cache:
                 # Next day is today's previous
                 previous_day = cache.pop("nextDay")
                 sample = merge_cache(previous_day, sample, top_n=top_n)
-            # Positive or negative change
-            sample["change"] = change
             # Is new level higher or lower than previous?
             assert_higher_or_lower(level, cache)
             # Is price bounded by the next higher or lower level?
@@ -104,6 +101,35 @@ def aggregate_renko(data_frame, cache, box_size, top_n=10, level_func=get_level)
     if not is_last_row:
         cache = get_next_cache(data_frame, cache, start, top_n=top_n)
     return samples, cache
+
+
+def aggregate(
+    df,
+    level,
+    change,
+    top_n=0,
+):
+    first_row = df.iloc[0]
+    last_row = df.iloc[-1]
+    buy_side = df[df.tickRule == 1]
+    data = {
+        "timestamp": first_row.timestamp,
+        "nanoseconds": first_row.nanoseconds,
+        "level": level,
+        "price": last_row.price,
+        "change": change,
+        "buyVolume": buy_side.volume.sum(),
+        "notional": df.notional.sum(),
+        "buyNotional": buy_side.notional.sum(),
+        "ticks": df.ticks.sum(),
+        "buyTicks": buy_side.ticks.sum(),
+    }
+    if "symbol" in df.columns:
+        assert len(df.symbol.unique()) == 1
+        data["symbol"] = first_row.symbol
+    if top_n:
+        data["topN"] = get_top_n(df, top_n=top_n)
+    return data
 
 
 def assert_higher_or_lower(level, cache):

@@ -1,5 +1,5 @@
 from ...utils import parse_period_from_to
-from .aggregator import (
+from .trades import (
     TradeAggregatorDailyPartition,
     TradeAggregatorDailyPartitionFromHourly,
     TradeAggregatorHourlyPartition,

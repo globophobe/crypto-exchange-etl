@@ -2,12 +2,6 @@ from decimal import Decimal
 
 import pandas as pd
 
-from ...bqloader import (
-    MULTIPLE_SYMBOL_AGGREGATE_SCHEMA,
-    MULTIPLE_SYMBOL_BAR_SCHEMA,
-    SINGLE_SYMBOL_AGGREGATE_SCHEMA,
-    SINGLE_SYMBOL_BAR_SCHEMA,
-)
 from ..base import BaseCacheAggregator
 from .lib import aggregate_candles, get_initial_candle_cache
 
@@ -20,20 +14,6 @@ class BaseCandleAggregator(BaseCacheAggregator):
         super().__init__(source_table, destination_table, **kwargs)
         self.timeframe = pd.Timedelta(timeframe)
         self.top_n = top_n
-
-    @property
-    def source_schema(self):
-        if self.has_multiple_symbols:
-            return MULTIPLE_SYMBOL_AGGREGATE_SCHEMA
-        else:
-            return SINGLE_SYMBOL_AGGREGATE_SCHEMA
-
-    @property
-    def schema(self):
-        if self.has_multiple_symbols:
-            return MULTIPLE_SYMBOL_BAR_SCHEMA
-        else:
-            return SINGLE_SYMBOL_BAR_SCHEMA
 
     def get_initial_cache(self, data_frame):
         cache = get_initial_candle_cache(data_frame)
@@ -62,7 +42,6 @@ class BaseCandleAggregator(BaseCacheAggregator):
                 data = pd.concat(samples)
             else:
                 data = samples
-
         else:
             data, cache = aggregate_candles(
                 data_frame,

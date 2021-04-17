@@ -451,7 +451,9 @@ class FinTickHourlyMixin:
     def iter_partition(self):
         for partition in self.partition_iterator:
             self.timestamp_from = partition
-            self.timestamp_to = partition - datetime.timedelta(microsecond=1)
+            self.timestamp_to = (
+                partition + pd.Timedelta("1 hour") - datetime.timedelta(microseconds=1)
+            )
             self.partition = partition
             yield partition
 

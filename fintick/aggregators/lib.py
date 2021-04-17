@@ -11,7 +11,7 @@ def get_timestamp_from_to(partition):
     return timestamp_from, timestamp_to
 
 
-def aggregate_bars(
+def aggregate_rows(
     df,
     uid=None,
     timestamp=None,
@@ -51,18 +51,14 @@ def aggregate_bars(
         assert len(df.symbol.unique()) == 1
         data["symbol"] = first_row.symbol
     if top_n:
-        top_n_df = get_top_n_data_frame(df, top_n=top_n)
-        data["topN"] = get_records(top_n_df)
+        data["topN"] = get_top_n(df, top_n=top_n)
     return data
 
 
-def get_top_n_data_frame(data_frame, column=NOTIONAL, top_n=0):
+def get_top_n(data_frame, column=NOTIONAL, top_n=0):
     index = data_frame[column].astype(float).nlargest(top_n).index
-    return data_frame[data_frame.index.isin(index)]
-
-
-def get_records(data_frame):
-    data = data_frame.to_dict("records")
+    df = data_frame[data_frame.index.isin(index)]
+    data = df.to_dict("records")
     data.sort(key=itemgetter("timestamp", "nanoseconds", "index"))
     for item in data:
         for key in list(item):
@@ -79,3 +75,41 @@ def get_records(data_frame):
             ):
                 del item[key]
     return data
+
+
+def get_next_cache(data_frame, cache, top_n=10):
+    next_day = aggregate_rows(data_frame, top_n=top_n)
+    if "nextDay" in cache:
+        previous_day = cache.pop("nextDay")
+        cache["nextDay"] = merge_cache(previous_day, next_day, top_n=top_n)
+    else:
+        cache["nextDay"] = next_day
+    return cache
+
+
+def merge_cache(previous, current, top_n=10):
+    # Price
+    current["open"] = previous["open"]
+    current["high"] = max(previous["high"], current["high"])
+    current["low"] = min(previous["low"], current["low"])
+    # Stats
+    for key in (
+        "volume",
+        "buyVolume",
+        "notional",
+        "buyNotional",
+        "ticks",
+        "buyTicks",
+    ):
+        current[key] += previous[key]
+    # Top N
+    merged_top = previous["topN"] + current["topN"]
+    if len(merged_top):
+        # Sort by volume
+        sorted(merged_top, key=lambda x: x[NOTIONAL], reverse=True)
+        # Slice top_n
+        m = merged_top[:top_n]
+        # Sort by timestamp, nanoseconds
+        sorted(m, key=itemgetter("timestamp", "nanoseconds", "index"))
+        current["topN"] = m
+    return current

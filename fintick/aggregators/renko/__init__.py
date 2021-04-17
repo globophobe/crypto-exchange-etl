@@ -1,4 +1,3 @@
-from .logrenko import LogRenko
-from .renko import Renko
+from .renko_aggregator import renko_aggregator
 
-__all__ = ["Renko", "LogRenko"]
+__all__ = ["renko_aggregator"]
