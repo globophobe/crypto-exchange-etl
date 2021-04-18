@@ -65,14 +65,14 @@ def get_container_name(hostname="asia.gcr.io", image="cryptotick"):
     return f"{hostname}/{project_id}/{image}"
 
 
+def is_local():
+    return all([os.environ.get(key, None) for key in GCP_APPLICATION_CREDENTIALS])
+
+
 def json_str_or_list(string):
     if string:
         return json.loads(string)
     return []
-
-
-def is_local():
-    return all([os.environ.get(key, None) for key in GCP_APPLICATION_CREDENTIALS])
 
 
 def parse_datetime(value, unit="ns"):

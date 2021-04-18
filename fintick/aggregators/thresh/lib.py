@@ -52,6 +52,13 @@ def get_cache_for_era_length(date, era_length, thresh_attr, cache):
     return cache
 
 
+def merge_threshold_cache(previous, current, top_n=0):
+    current["open"] = previous["open"]
+    current["high"] = max(previous["high"], current["high"])
+    current["low"] = min(previous["low"], current["low"])
+    return merge_cache(previous, current, top_n=top_n)
+
+
 def aggregate_threshold(data_frame, cache, thresh_attr, thresh_value, top_n=0):
     start = 0
     samples = []

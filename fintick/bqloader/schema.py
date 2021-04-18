@@ -105,9 +105,9 @@ MULTIPLE_SYMBOL_THRESHOLD_SCHEMA = [
 SINGLE_SYMBOL_RENKO_SCHEMA = [
     bigquery.SchemaField("timestamp", "TIMESTAMP", "REQUIRED"),
     bigquery.SchemaField("nanoseconds", "INTEGER", "REQUIRED"),
-    bigquery.SchemaField("level", "INTEGER", "REQUIRED"),
-    bigquery.SchemaField("change", "INTEGER", "REQUIRED"),
-] + SINGLE_SYMBOL_BAR_SCHEMA[5:]
+    bigquery.SchemaField("level", "BIGNUMERIC", "REQUIRED"),
+    bigquery.SchemaField("price", "BIGNUMERIC", "REQUIRED"),
+] + SINGLE_SYMBOL_BAR_SCHEMA[6:]
 
 MULTIPLE_SYMBOL_RENKO_SCHEMA = [
     bigquery.SchemaField("symbol", "STRING", "REQUIRED"),

@@ -7,29 +7,18 @@ def get_level(price, box_size):
     return int(price / box_size) * box_size
 
 
-def get_log_level(price, box_size):
-    log_price = np.log1p(price)
-    return int(log_price / box_size) * box_size
-
-
-def get_initial_cache(data_frame, box_size, level_func=get_level):
+def get_initial_cache(data_frame, box_size):
     row = data_frame.loc[0]
     # First trade decides level, so is discarded
     df = data_frame.loc[1:]
     df.reset_index(drop=True, inplace=True)
-    cache = {
-        "timestamp": row.timestamp,
-        "level": level_func(row.price, box_size),
-        "direction": None,
-    }
+    cache = {"level": get_level(row.price, box_size), "direction": None}
     return df, cache
 
 
-def update_cache(data_frame, cache, sample):
-    # Cache
-    cache["timestamp"] = sample["timestamp"]
-    cache["level"] = sample["level"]
-    cache["direction"] = np.sign(sample["change"])
+def update_cache(cache, level, change):
+    cache["level"] = level
+    cache["direction"] = np.sign(change)
     return cache
 
 
@@ -50,16 +39,15 @@ def get_bounds(cache, box_size, reversal=1):
 
 def get_change(cache, high, low, price, box_size, level_func=get_level):
     level = cache["level"]
-    p = price if level_func == get_level else np.log1p(price)
-    higher = p >= high
-    lower = p < low
+    higher = price >= high
+    lower = price < low
     if higher or lower:
         current_level = level_func(price, box_size)
         change = current_level - level
         # Did price break below threshold?
         if lower:
             # Is there a remainder?
-            if p % box_size != 0:
+            if price % box_size != 0:
                 change += box_size
                 current_level += box_size
         return current_level, change
@@ -75,13 +63,8 @@ def aggregate_renko(data_frame, cache, box_size, top_n=10, level_func=get_level)
             cache, high, low, row.price, box_size, level_func=level_func
         )
         if change:
-            df = data_frame.iloc[start:index]
-            sample = aggregate(
-                df,
-                level,
-                change,
-                top_n=top_n,
-            )
+            df = data_frame.loc[start:index]
+            sample = aggregate(df, level, top_n=top_n)
             if "nextDay" in cache:
                 # Next day is today's previous
                 previous_day = cache.pop("nextDay")
@@ -93,36 +76,33 @@ def aggregate_renko(data_frame, cache, box_size, top_n=10, level_func=get_level)
             # Next index
             start = index + 1
             # Update cache
-            cache = update_cache(data_frame, cache, sample)
+            cache = update_cache(cache, level, change)
             high, low = get_bounds(cache, box_size)
             samples.append(sample)
     # Cache
     is_last_row = start == len(data_frame)
     if not is_last_row:
-        cache = get_next_cache(data_frame, cache, start, top_n=top_n)
+        next_day = aggregate(data_frame.loc[start:], level, top_n=top_n)
+        cache = get_next_cache(cache, next_day, top_n=top_n)
     return samples, cache
 
 
-def aggregate(
-    df,
-    level,
-    change,
-    top_n=0,
-):
+def aggregate(df, level, top_n=0):
     first_row = df.iloc[0]
     last_row = df.iloc[-1]
     buy_side = df[df.tickRule == 1]
     data = {
-        "timestamp": first_row.timestamp,
-        "nanoseconds": first_row.nanoseconds,
+        # Close timestamp, or won't be in partition
+        "timestamp": last_row.timestamp,
+        "nanoseconds": last_row.nanoseconds,
         "level": level,
         "price": last_row.price,
-        "change": change,
         "buyVolume": buy_side.volume.sum(),
-        "notional": df.notional.sum(),
+        "volume": df.volume.sum(),
         "buyNotional": buy_side.notional.sum(),
-        "ticks": df.ticks.sum(),
+        "notional": df.notional.sum(),
         "buyTicks": buy_side.ticks.sum(),
+        "ticks": df.ticks.sum(),
     }
     if "symbol" in df.columns:
         assert len(df.symbol.unique()) == 1
@@ -139,5 +119,4 @@ def assert_higher_or_lower(level, cache):
 def assert_bounds(row, cache, box_size):
     high, low = get_bounds(cache, box_size)
     assert low <= cache["level"] <= high
-    # Maybe float
-    assert np.isclose(high, low + (box_size * 2))
+    assert high == low + (box_size * 2)

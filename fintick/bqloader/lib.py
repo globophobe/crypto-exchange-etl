@@ -14,6 +14,16 @@ def get_table_id(exchange, suffix=""):
     return table_id
 
 
+def get_decimal_value_for_table_name(value):
+    string = str(value)
+    if "." in string:
+        head, tail = str(value).split(".")
+        if any([int(item) for item in tail]):
+            return f"{head}d{tail}"
+        return head
+    return string
+
+
 def get_schema_columns(schema):
     return [field.name for field in schema]
 

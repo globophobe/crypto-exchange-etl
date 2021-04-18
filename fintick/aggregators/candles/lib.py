@@ -54,7 +54,11 @@ def aggregate_candles(
             else:
                 open_price = cache["open"]
             sample = aggregate_rows(
-                df, timestamp=start, open_price=open_price, top_n=top_n
+                df,
+                # Open timestamp, or won't be in partition
+                timestamp=start,
+                open_price=open_price,
+                top_n=top_n,
             )
             cache["open"] = sample["close"]
             samples.append(sample)

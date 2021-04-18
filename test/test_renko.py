@@ -1,20 +1,11 @@
-import datetime
-
 import pandas as pd
 from fintick.aggregators.renko.lib import aggregate_renko, get_initial_cache
 
 from .utils import get_trade
 
 
-def get_data_frame(all_trades, date=None):
-    date = date or datetime.datetime.now().date()
-    trades = []
-    for trade in all_trades:
-        t = get_trade(**trade)
-        t["date"] = trade.get("date", date)
-        t["vwap"] = trade.get("vwap", 0)
-        trades.append(t)
-    return pd.DataFrame(trades)
+def get_data_frame(trades, date=None):
+    return pd.DataFrame([get_trade(**t) for t in trades])
 
 
 def aggregate(data_frame, cache=None, box_size=1, top_n=10):
@@ -30,22 +21,21 @@ def assert_levels(trades, expected):
     assert len(data) == len(expected) - 1
     for index, row in enumerate(data):
         assert row["level"] == expected[index + 1]
-        assert row["change"] == expected[index + 1] - expected[index]
 
 
 def assert_merge_cache(trades, top_n=10):
     data_frame = get_data_frame(trades)
     aggregated_without_cache_data, _ = aggregate(data_frame, top_n=top_n)
-    prior_data_frame = data_frame.loc[:2]
+    previous_data_frame = data_frame.loc[:2]
     cache_data_frame = data_frame.loc[3:]
-    prior_data_frame.reset_index(drop=True, inplace=True)
+    previous_data_frame.reset_index(drop=True, inplace=True)
     cache_data_frame.reset_index(drop=True, inplace=True)
-    prior_data, cache = aggregate(prior_data_frame)
+    previous_data, cache = aggregate(previous_data_frame)
     next_day = pd.DataFrame([cache["nextDay"]])
     aggregated_with_cache_data, _ = aggregate(
         cache_data_frame, cache=cache, top_n=top_n
     )
-    aggregated_with_cache_df = pd.DataFrame(prior_data + aggregated_with_cache_data)
+    aggregated_with_cache_df = pd.DataFrame(previous_data + aggregated_with_cache_data)
     aggregated_without_cache_df = pd.DataFrame(aggregated_without_cache_data)
     # Assert dataframe, excluding topN
     columns = aggregated_with_cache_df.columns.difference(["topN"])

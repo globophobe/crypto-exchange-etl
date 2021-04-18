@@ -1,6 +1,7 @@
 import datetime
 import os
 from copy import copy
+from decimal import Decimal
 
 from google.api_core.datetime_helpers import DatetimeWithNanoseconds
 
@@ -16,12 +17,8 @@ def get_collection_name(exchange, suffix=""):
     return collection
 
 
-def firestore_data(data, strip_date=True):
+def firestore_data(data, deserialize=False):
     data = copy(data)
-    # Firestore doesn't support datetime.date only datetime.datetime
-    if strip_date:
-        if "date" in data:
-            del data["date"]
     # Timestamp
     for key in ("timestamp", "listing", "expiry"):
         if key in data:
@@ -37,6 +34,8 @@ def firestore_data(data, strip_date=True):
             data[key] = value
     # Decimal
     for key in (
+        "level",
+        "change",
         "open",
         "high",
         "low",
@@ -54,6 +53,8 @@ def firestore_data(data, strip_date=True):
             value = data[key]
             if isinstance(value, dict):
                 data[key] = firestore_data(value)
+            elif deserialize:
+                data[key] = Decimal(value)
             else:
                 data[key] = str(value)
     # Int
@@ -67,9 +68,13 @@ def firestore_data(data, strip_date=True):
         if key in data:
             data[key] = int(data[key])
     if "nextDay" in data:
-        data["nextDay"] = firestore_data(data["nextDay"])
+        data["nextDay"] = firestore_data(data["nextDay"], deserialize=deserialize)
     if "topN" in data:
-        data["topN"] = [firestore_data(t) for t in data["topN"]]
+        data["topN"] = [
+            firestore_data(t, deserialize=deserialize) for t in data["topN"]
+        ]
     if "candles" in data:
-        data["candles"] = [firestore_data(c) for c in data["candles"]]
+        data["candles"] = [
+            firestore_data(c, deserialize=deserialize) for c in data["candles"]
+        ]
     return data

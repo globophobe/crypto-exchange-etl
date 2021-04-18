@@ -245,16 +245,6 @@ class BaseCacheAggregator(BaseAggregator):
             return SINGLE_SYMBOL_BAR_SCHEMA
 
     @property
-    def fields(self):
-        return ", ".join(
-            [
-                field
-                for field in get_schema_columns(self.source_schema)
-                if field != "uid"
-            ]
-        )
-
-    @property
     def is_cache_required(self):
         raise NotImplementedError
 
@@ -303,7 +293,7 @@ class BaseCacheAggregator(BaseAggregator):
     def write(self, data, cache):
         # JSON data
         for index, d in enumerate(data):
-            data[index] = stringify_datetime_types(firestore_data(d, strip_date=False))
+            data[index] = stringify_datetime_types(firestore_data(d))
             data[index]["topN"] = [
                 stringify_datetime_types(firestore_data(t)) for t in d["topN"]
             ]

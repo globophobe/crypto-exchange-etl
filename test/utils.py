@@ -7,25 +7,34 @@ import pandas as pd
 def get_trade(
     symbol=None,
     timestamp=None,
-    nanoseconds=None,
+    nanoseconds=0,
     price=None,
     notional=None,
     tick_rule=None,
+    total_ticks=1,
 ):
-    p = price or round(random.random() * 10, 2)
-    n = notional or random.random() * 10
-    volume = p * n
+    timestamp = timestamp or datetime.datetime.now()
+    price = price or round(random.random() * 10, 2)
+    notional = notional or random.random() * 10
+    volume = price * notional
+    tick_rule = tick_rule or random.choice((1, -1))
     data = {
-        "timestamp": timestamp or datetime.datetime.now(),
-        "nanoseconds": nanoseconds or 0,
-        "price": p,
+        "timestamp": timestamp,
+        "nanoseconds": nanoseconds,
+        "price": price,
         "volume": volume,
-        "notional": n,
-        "tickRule": tick_rule or random.choice((1, -1)),
+        "notional": notional,
+        "tickRule": tick_rule,
+        "ticks": total_ticks,
     }
     if symbol:
         data["symbol"] = symbol
     return data
+
+
+def get_price(price, tick_rule, jitter=0.0):
+    change = random.random() * tick_rule * jitter
+    return price + round(change, 2)  # Change in dollars
 
 
 def get_trades(
@@ -33,39 +42,44 @@ def get_trades(
     symbol=None,
     prices=[],
     is_equal_timestamp=False,
-    nanoseconds=None,
+    nanoseconds=0,
     notional=None,
+    total_ticks=1,
 ):
     """Generate random trades"""
-    trade = get_trade(
-        symbol=symbol,
-        price=prices[0] if len(prices) else None,
-        nanoseconds=nanoseconds,
-        notional=notional,
-        tick_rule=ticks[0],
-    )
-    trades = [trade]
-    for index, tick in enumerate(ticks[1:]):
-        if len(prices):
-            p = prices[index + 1]
+    trades = []
+    for index, tick in enumerate(ticks):
+        # Price
+        if index == 0:
+            if len(prices):
+                price = get_price(prices[index], tick)
+            else:
+                price = None
         else:
-            p = trade["price"] + (round(random.random() * 0.1, 2)) * tick
-        t = get_trade(
-            symbol=symbol,
-            timestamp=trade["timestamp"] if is_equal_timestamp else None,
-            nanoseconds=nanoseconds or 0,
-            price=p,
-            notional=notional,
-            tick_rule=tick,
+            price = get_price(trades[-1]["price"], tick, jitter=0.1)
+        # Timestamp
+        if len(trades) and is_equal_timestamp:
+            timestamp = trades[0]["timestamp"]
+        else:
+            timestamp = None
+        trades.append(
+            get_trade(
+                symbol=symbol,
+                timestamp=timestamp,
+                nanoseconds=nanoseconds,
+                price=price,
+                notional=notional,
+                tick_rule=tick,
+                total_ticks=total_ticks,
+            )
         )
-        trades.append(t)
     return trades
 
 
-def get_data_frame(all_trades):
+def get_data_frame(data):
     trades = []
-    for trade in all_trades:
-        prices = trade.pop("prices", [])
-        ticks = trade.pop("ticks")
-        trades += get_trades(ticks, prices=prices, **trade)
+    for item in data:
+        prices = item.pop("prices", [])
+        ticks = item.pop("ticks")
+        trades += get_trades(ticks, prices=prices, **item)
     return pd.DataFrame(trades)

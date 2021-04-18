@@ -32,8 +32,8 @@ def aggregate_rows(
     else:
         open_price = first_row.price
     data = {
-        "timestamp": timestamp if timestamp else first_row.timestamp,
-        "nanoseconds": nanoseconds if nanoseconds else first_row.nanoseconds,
+        "timestamp": timestamp if timestamp else last_row.timestamp,
+        "nanoseconds": nanoseconds if nanoseconds else last_row.nanoseconds,
         "open": open_price,
         "high": high,
         "low": low,
@@ -55,11 +55,11 @@ def aggregate_rows(
     return data
 
 
-def get_top_n(data_frame, column=NOTIONAL, top_n=0):
-    index = data_frame[column].astype(float).nlargest(top_n).index
+def get_top_n(data_frame, top_n=0):
+    index = data_frame[NOTIONAL].astype(float).nlargest(top_n).index
     df = data_frame[data_frame.index.isin(index)]
     data = df.to_dict("records")
-    data.sort(key=itemgetter("timestamp", "nanoseconds", "index"))
+    data.sort(key=itemgetter("timestamp", "nanoseconds"))
     for item in data:
         for key in list(item):
 
@@ -77,8 +77,7 @@ def get_top_n(data_frame, column=NOTIONAL, top_n=0):
     return data
 
 
-def get_next_cache(data_frame, cache, top_n=10):
-    next_day = aggregate_rows(data_frame, top_n=top_n)
+def get_next_cache(cache, next_day, top_n=0):
     if "nextDay" in cache:
         previous_day = cache.pop("nextDay")
         cache["nextDay"] = merge_cache(previous_day, next_day, top_n=top_n)
@@ -87,12 +86,7 @@ def get_next_cache(data_frame, cache, top_n=10):
     return cache
 
 
-def merge_cache(previous, current, top_n=10):
-    # Price
-    current["open"] = previous["open"]
-    current["high"] = max(previous["high"], current["high"])
-    current["low"] = min(previous["low"], current["low"])
-    # Stats
+def merge_cache(previous, current, top_n=0):
     for key in (
         "volume",
         "buyVolume",
@@ -101,15 +95,15 @@ def merge_cache(previous, current, top_n=10):
         "ticks",
         "buyTicks",
     ):
-        current[key] += previous[key]
+        current[key] += previous[key]  # Add
     # Top N
     merged_top = previous["topN"] + current["topN"]
     if len(merged_top):
-        # Sort by volume
-        sorted(merged_top, key=lambda x: x[NOTIONAL], reverse=True)
+        # Sort by notional
+        merged_top.sort(key=lambda x: x[NOTIONAL], reverse=True)
         # Slice top_n
         m = merged_top[:top_n]
         # Sort by timestamp, nanoseconds
-        sorted(m, key=itemgetter("timestamp", "nanoseconds", "index"))
+        m.sort(key=itemgetter("timestamp", "nanoseconds"))
         current["topN"] = m
     return current

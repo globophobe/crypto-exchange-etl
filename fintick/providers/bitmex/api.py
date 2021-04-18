@@ -123,7 +123,12 @@ def get_bitmex_api_response(url, pagination_id=None, retry=30):
             time.sleep(int(retry))
         else:
             raise Exception(f"HTTP {response.status_code}: {response.reason_phrase}")
-    except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as e:
+    except (
+        httpx.ConnectError,
+        httpx.ConnectTimeout,
+        httpx.ReadError,
+        httpx.ReadTimeout,
+    ) as e:
         if retry > 0:
             time.sleep(1)
             retry -= 1

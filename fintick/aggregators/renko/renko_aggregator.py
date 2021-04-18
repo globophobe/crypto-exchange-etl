@@ -4,7 +4,7 @@ from .renko import RenkoAggregatorDailyPartition, RenkoAggregatorHourlyPartition
 
 def renko_aggregator(
     source_table: str = None,
-    box_size: float = 1.0,
+    box_size: str = None,
     top_n: int = 0,
     period_from: str = None,
     period_to: str = None,

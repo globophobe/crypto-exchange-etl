@@ -49,7 +49,12 @@ def get_bitfinex_api_response(url, pagination_id=None, retry=30):
             return json.loads(result, parse_float=Decimal)
         else:
             raise Exception(f"HTTP {response.status_code}: {response.reason_phrase}")
-    except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as e:
+    except (
+        httpx.ConnectError,
+        httpx.ConnectTimeout,
+        httpx.ReadError,
+        httpx.ReadTimeout,
+    ) as e:
         if retry > 0:
             time.sleep(1)
             retry -= 1
