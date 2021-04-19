@@ -1,4 +1,5 @@
 import datetime
+import re
 
 import pandas as pd
 import pendulum
@@ -17,7 +18,11 @@ from ..bqloader import (
 )
 from ..fintick import FinTick, FinTickDailyMixin, FinTickHourlyMixin
 from ..fscache import FirestoreCache, firestore_data
+from ..utils import get_hot_date, get_hot_time
 from .lib import get_timestamp_from_to
+from .utils import get_firestore_collection, strip_hot_from_aggregated
+
+HOT_REGEX = re.compile(r"^(\w+)\.(\w+)_(\w+)$")
 
 
 class BaseAggregator(FinTick):
@@ -132,13 +137,20 @@ class BaseAggregator(FinTick):
                 timestamps.append(data[attr]["timestamp"])
         return timestamps
 
+    def source_has_data(self, document):
+        return self.firestore_source.has_data(document)
+
+    def destination_has_data(self, document):
+        return self.firestore_destination.has_data(document)
+
     def main(self):
+        """Partitions are independent, so iterates backwards"""
         if self.period_from and self.period_to:
             for partition in self.iter_partition():
                 self.partition_decorator = self.get_partition_decorator(partition)
                 document = self.get_document_name(partition)
-                if self.firestore_source.has_data(document):
-                    if not self.firestore_destination.has_data(document):
+                if self.source_has_data(document):
+                    if not self.destination_has_data(document):
                         data_frame = self.get_data_frame()
                         # Are there any trades?
                         if len(data_frame):
@@ -244,10 +256,6 @@ class BaseCacheAggregator(BaseAggregator):
         else:
             return SINGLE_SYMBOL_BAR_SCHEMA
 
-    @property
-    def is_cache_required(self):
-        raise NotImplementedError
-
     def get_initial_cache(self, data_frame):
         raise NotImplementedError
 
@@ -262,16 +270,18 @@ class BaseCacheAggregator(BaseAggregator):
             data_frame, data = self.get_initial_cache(data_frame)
         return data_frame, data
 
-    def get_firebase_data(self, cache):
-        return
+    @property
+    def is_cache_required(self):
+        return not self.firestore_destination.is_initial()
 
     def main(self):
+        """Partitions are dependent, so iterates forwards"""
         if self.period_from and self.period_to:
             for partition in self.iter_partition():
                 self.partition_decorator = self.get_partition_decorator(partition)
                 document = self.get_document_name(partition)
-                if self.firestore_source.has_data(document):
-                    if not self.firestore_destination.has_data(document):
+                if self.source_has_data(document):
+                    if not self.destination_has_data(document):
                         data_frame = self.get_data_frame()
                         data_frame, cache = self.get_cache(data_frame)
                         # Are there any trades?
@@ -318,9 +328,17 @@ class HourlyCacheAggregatorMixin(HourlyAggregatorMixin):
         period = pendulum.period(self.period_from, self.period_to)  # Not reverse order
         return period.range("hours")
 
-    @property
-    def is_cache_required(self):
-        return self.timestamp_from != self.get_min_timestamp()
+    def get_cache(self, data_frame):
+        data_frame, data = super().get_cache(data_frame)
+        _, table_name = self.source_table.split(".")
+        hot_time = get_hot_time()
+        if self.partition == hot_time:
+            table_id = strip_hot_from_aggregated(self.source_table)
+            collection = get_firestore_collection(table_id)
+            hot_time -= pd.Timedelta("1d")
+            document = get_hot_date().isoformat()
+            data = FirestoreCache(collection).get(document)
+        return data_frame, data
 
 
 class DailyCacheAggregatorMixin(DailyAggregatorMixin):
@@ -332,7 +350,3 @@ class DailyCacheAggregatorMixin(DailyAggregatorMixin):
     def partition_iterator(self):
         period = pendulum.period(self.period_from, self.period_to)  # Not reverse order
         return period.range("days")
-
-    @property
-    def is_cache_required(self):
-        return self.timestamp_from.date() != self.get_min_timestamp().date()

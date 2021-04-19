@@ -2,20 +2,17 @@ from decimal import Decimal
 
 import pandas as pd
 
-from ...bqloader import (
-    MULTIPLE_SYMBOL_RENKO_SCHEMA,
-    SINGLE_SYMBOL_RENKO_SCHEMA,
-    get_decimal_value_for_table_name,
-)
+from ...bqloader import MULTIPLE_SYMBOL_RENKO_SCHEMA, SINGLE_SYMBOL_RENKO_SCHEMA
 from ...fscache import firestore_data
 from ..base import BaseCacheAggregator
+from ..utils import get_decimal_value_for_table_id
 from .lib import aggregate_renko, get_initial_cache
 
 
 class BaseRenkoAggregator(BaseCacheAggregator):
     def __init__(self, source_table, box_size, reversal=1, top_n=0, **kwargs):
         self.box_size = Decimal(box_size)
-        box = get_decimal_value_for_table_name(self.box_size)
+        box = get_decimal_value_for_table_id(self.box_size)
         destination_table = f"{source_table}_renko{box}"
         if top_n:
             destination_table += f"_top{top_n}"

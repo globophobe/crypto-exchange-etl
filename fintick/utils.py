@@ -80,6 +80,16 @@ def parse_datetime(value, unit="ns"):
     return timestamp.replace(tzinfo=datetime.timezone.utc)
 
 
+def get_hot_date():
+    hot_time = datetime.datetime.utcnow() - BIGQUERY_HOT
+    return hot_time.date()
+
+
+def get_hot_time():
+    hot_date = get_hot_date()
+    return datetime.datetime.combine(hot_date, datetime.datetime.min.time())
+
+
 def parse_period_from_to(period_from=None, period_to=None, timestamp_to_max=None):
     date_from = date_to = timestamp_from = timestamp_to = None
     period_from = parse_period(period_from)

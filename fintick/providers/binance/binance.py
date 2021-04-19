@@ -1,4 +1,4 @@
-from ...utils import parse_period_from_to
+from ...utils import get_hot_date, parse_period_from_to
 from .perpetual import (
     BinanceDailyPartitionFromHourly,
     BinancePerpetualDailyPartition,
@@ -21,9 +21,8 @@ def binance_perpetual(
             symbol, period_from=timestamp_from, period_to=timestamp_to, verbose=verbose
         ).main()
     if date_from and date_to:
-        delta = date_to - date_from
         # Try loading most recent daily data from hourly
-        if delta.days >= 1:
+        if date_to == get_hot_date():
             BinanceDailyPartitionFromHourly(
                 symbol,
                 period_from=date_to,

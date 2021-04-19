@@ -1,10 +1,5 @@
 from .bqloader import BigQueryDaily, BigQueryHourly
-from .lib import (
-    get_decimal_value_for_table_name,
-    get_schema_columns,
-    get_table_id,
-    stringify_datetime_types,
-)
+from .lib import get_schema_columns, get_table_id, stringify_datetime_types
 from .schema import (
     MULTIPLE_SYMBOL_AGGREGATE_SCHEMA,
     MULTIPLE_SYMBOL_BAR_SCHEMA,
@@ -32,7 +27,6 @@ __all__ = [
     "row_to_json",
     "get_schema_columns",
     "get_table_id",
-    "get_decimal_value_for_table_name",
     "stringify_datetime_types",
     "BigQueryDaily",
     "BigQueryHourly",

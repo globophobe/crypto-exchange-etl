@@ -1,4 +1,4 @@
-from ...utils import parse_period_from_to
+from ...utils import get_hot_date, parse_period_from_to
 from .trades import (
     TradeAggregatorDailyPartition,
     TradeAggregatorDailyPartitionFromHourly,
@@ -26,9 +26,8 @@ def trade_aggregator(
             verbose=verbose,
         ).main()
     if date_from and date_to:
-        delta = date_to - date_from
         # Try loading most recent daily data from hourly
-        if delta.days >= 1:
+        if date_to == get_hot_date():
             TradeAggregatorDailyPartitionFromHourly(
                 source_table,
                 period_from=date_to,

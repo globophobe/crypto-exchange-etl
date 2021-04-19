@@ -1,4 +1,5 @@
 from ...utils import parse_period_from_to
+from ..utils import assert_aggregated_table
 from .renko import RenkoAggregatorDailyPartition, RenkoAggregatorHourlyPartition
 
 
@@ -19,7 +20,7 @@ def renko_aggregator(
     # Daily partitions, then hourly partitions
     if date_from and date_to:
         RenkoAggregatorDailyPartition(
-            source_table,
+            assert_aggregated_table(source_table),
             box_size=box_size,
             top_n=top_n,
             period_from=date_from,
@@ -29,7 +30,7 @@ def renko_aggregator(
         ).main()
     if timestamp_from and timestamp_to:
         RenkoAggregatorHourlyPartition(
-            f"{source_table}_hot",
+            assert_aggregated_table(source_table, hot=True),
             box_size=box_size,
             top_n=top_n,
             period_from=timestamp_from,

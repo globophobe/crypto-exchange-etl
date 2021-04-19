@@ -81,6 +81,21 @@ SINGLE_SYMBOL_BAR_SCHEMA = [
             bigquery.SchemaField("tickRule", "INTEGER", "REQUIRED"),
         ),
     ),
+    bigquery.SchemaField(
+        "footprintN",
+        "RECORD",
+        mode="REPEATED",
+        fields=(
+            bigquery.SchemaField("timestamp", "TIMESTAMP", "REQUIRED"),
+            bigquery.SchemaField("nanoseconds", "INTEGER", "REQUIRED"),
+            bigquery.SchemaField("price", "BIGNUMERIC", "REQUIRED"),
+            bigquery.SchemaField("vwap", "BIGNUMERIC", "REQUIRED"),
+            bigquery.SchemaField("volume", "BIGNUMERIC", "REQUIRED"),
+            bigquery.SchemaField("notional", "BIGNUMERIC", "REQUIRED"),
+            bigquery.SchemaField("ticks", "INTEGER", "REQUIRED"),
+            bigquery.SchemaField("tickRule", "INTEGER", "REQUIRED"),
+        ),
+    ),
 ]
 
 

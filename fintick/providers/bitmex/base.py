@@ -32,13 +32,10 @@ class BitmexMixin:
         return self.get_timestamp(trade).nanosecond
 
     def get_price(self, trade):
-        return trade["price"]
+        return Decimal(trade["price"])
 
     def get_volume(self, trade):
-        foreign_notional = trade["foreignNotional"]
-        if isinstance(foreign_notional, int):
-            return Decimal(foreign_notional)
-        return foreign_notional
+        return Decimal(trade["foreignNotional"])
 
     def get_notional(self, trade):
         return self.get_volume(trade) / self.get_price(trade)
@@ -59,7 +56,7 @@ class BitmexRESTMixin(BitmexMixin):
 
     def get_data_frame(self, trades):
         data_frame = super().get_data_frame(trades)
-        # REST API is reversed
+        # No index from REST API, and trades are reversed
         data_frame["index"] = data_frame.index.values[::-1]
         return data_frame
 
