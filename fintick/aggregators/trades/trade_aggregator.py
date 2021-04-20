@@ -1,3 +1,5 @@
+import pandas as pd
+
 from ...utils import get_hot_date, parse_period_from_to
 from .trades import (
     TradeAggregatorDailyPartition,
@@ -34,6 +36,8 @@ def trade_aggregator(
                 period_to=date_to,
                 verbose=verbose,
             ).main()
+            # Modify date_to by 1 day
+            date_to -= pd.Timedelta("1d")
         TradeAggregatorDailyPartition(
             source_table,
             period_from=date_from,

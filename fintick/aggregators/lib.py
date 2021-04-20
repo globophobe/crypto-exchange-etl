@@ -1,3 +1,4 @@
+import math
 from operator import itemgetter
 
 import pandas as pd
@@ -18,6 +19,7 @@ def aggregate_rows(
     nanoseconds=None,
     open_price=None,
     top_n=0,
+    footprint_n=2,
 ):
     first_row = df.iloc[0]
     last_row = df.iloc[-1]
@@ -52,12 +54,48 @@ def aggregate_rows(
         data["symbol"] = first_row.symbol
     if top_n:
         data["topN"] = get_top_n(df, top_n=top_n)
+    if footprint_n:
+        data["footprintN"] = get_footprint_n(df, min_count=footprint_n)
     return data
 
 
 def get_top_n(data_frame, top_n=0):
     index = data_frame[NOTIONAL].astype(float).nlargest(top_n).index
     df = data_frame[data_frame.index.isin(index)]
+    return get_records(df)
+
+
+def get_footprint_n(data_frame, min_count=0, tolerance=4):
+    """
+    Filter by "min_count", and truncate to "tolerance" decimal places.
+    """
+    tol = pow(10, tolerance)
+    trunc_notional = data_frame.apply(
+        lambda x: (math.trunc(x.notional * tol) / tol), axis=1
+    )
+    grouped = trunc_notional.groupby(trunc_notional)
+    filtered = grouped.filter(lambda x: len(x) > min_count)
+    df = data_frame[data_frame.index.isin(filtered.index)]
+    trunc = trunc_notional[trunc_notional.index.isin(filtered.index)]
+    footprint_df = pd.DataFrame(
+        {
+            "price": df.price,
+            "volume": df.volume,
+            "notional": df.notional,
+            "trunc": trunc,
+            "tickRule": df.tickRule,
+        }
+    )
+    for group, idx in footprint_df.groupby("trunc").groups.items():
+        foot = footprint_df[footprint_df.index.isin(idx)]
+        import pdb
+
+        pdb.set_trace()
+
+    return get_records(df)
+
+
+def get_records(df):
     data = df.to_dict("records")
     data.sort(key=itemgetter("timestamp", "nanoseconds"))
     for item in data:

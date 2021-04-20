@@ -1,3 +1,5 @@
+import pandas as pd
+
 from ...utils import get_hot_date, parse_period_from_to
 from .perpetual import (
     BinanceDailyPartitionFromHourly,
@@ -29,6 +31,8 @@ def binance_perpetual(
                 period_to=date_to,
                 verbose=verbose,
             ).main()
+            # Modify date_to by 1 day
+            date_to -= pd.Timedelta("1d")
         BinancePerpetualDailyPartition(
             symbol,
             period_from=date_from,

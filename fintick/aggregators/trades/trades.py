@@ -45,9 +45,8 @@ class TradeAggregatorDailyPartitionFromHourly(
                 has_data = all([document and document["ok"] for document in documents])
                 if has_data:
                     data_frame = self.load_data_frame()
-                    import pdb
-
-                    pdb.set_trace()
+                    # Overwrite hourly partition indices with daily index
+                    data_frame["index"] = data_frame.index.values
                     self.write(data_frame)
                     self.clean_firestore()
 
@@ -61,6 +60,18 @@ class TradeAggregatorDailyPartitionFromHourly(
         partition_decorator = self.get_partition_decorator(self.partition)
         bigquery_loader = self.get_bigquery_loader(table_id, partition_decorator)
         return bigquery_loader.read_table(sql, self.job_config)
+
+    def write(self, data_frame, is_complete=True):
+        # BigQuery
+        partition_decorator = self.get_partition_decorator(self.partition)
+        bigquery_loader = self.get_bigquery_loader(
+            self.destination_table, partition_decorator
+        )
+        bigquery_loader.write_table(self.schema, data_frame)
+        # Firebase
+        self.set_firebase(
+            data_frame, attr="firestore_destination", is_complete=is_complete
+        )
 
 
 class TradeAggregatorDailyPartition(DailyAggregatorMixin, BaseTradeAggregator):
