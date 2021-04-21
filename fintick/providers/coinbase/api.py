@@ -2,6 +2,7 @@ import time
 
 import httpx
 
+from ...constants import HTTPX_ERRORS
 from ...utils import iter_api, parse_datetime
 from .constants import MAX_RESULTS, MIN_ELAPSED_PER_REQUEST, URL
 
@@ -46,12 +47,7 @@ def get_coinbase_api_response(url, pagination_id=None, retry=30):
             return response.json()
         else:
             raise Exception(f"HTTP {response.status_code}: {response.reason_phrase}")
-    except (
-        httpx.ConnectError,
-        httpx.ConnectTimeout,
-        httpx.ReadError,
-        httpx.ReadTimeout,
-    ) as e:
+    except HTTPX_ERRORS as e:
         if retry > 0:
             time.sleep(1)
             retry -= 1

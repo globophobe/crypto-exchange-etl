@@ -4,6 +4,7 @@ from decimal import Decimal
 
 import httpx
 
+from ...constants import HTTPX_ERRORS
 from ...utils import iter_api, parse_datetime
 from .constants import API_URL, MAX_RESULTS, MIN_ELAPSED_PER_REQUEST
 
@@ -57,12 +58,7 @@ def get_bybit_api_response(url, pagination_id=None, retry=30):
             return res
         else:
             raise Exception(f"HTTP {response.status_code}: {response.reason_phrase}")
-    except (
-        httpx.ConnectError,
-        httpx.ConnectTimeout,
-        httpx.ReadError,
-        httpx.ReadTimeout,
-    ) as e:
+    except HTTPX_ERRORS as e:
         if retry > 0:
             time.sleep(1)
             retry -= 1
