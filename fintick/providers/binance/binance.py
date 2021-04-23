@@ -25,14 +25,15 @@ def binance_perpetual(
     if date_from and date_to:
         # Try loading most recent daily data from hourly
         if date_to == get_hot_date():
-            BinanceDailyPartitionFromHourly(
+            ok = BinanceDailyPartitionFromHourly(
                 symbol,
                 period_from=date_to,
                 period_to=date_to,
                 verbose=verbose,
             ).main()
-            # Modify date_to by 1 day
-            date_to -= pd.Timedelta("1d")
+            if ok:
+                # Modify date_to by 1 day
+                date_to -= pd.Timedelta("1d")
         BinancePerpetualDailyPartition(
             symbol,
             period_from=date_from,

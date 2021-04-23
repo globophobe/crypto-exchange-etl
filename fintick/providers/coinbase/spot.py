@@ -2,7 +2,7 @@ import datetime
 
 from ...fintick import (
     FinTick,
-    FinTickDailyHourlyMixin,
+    FinTickDailyHourlySequentialIntegerMixin,
     FinTickDailyMixin,
     FinTickDailyPartitionFromHourlySequentialIntegerMixin,
     FinTickHourlyMixin,
@@ -24,7 +24,10 @@ class CoinbaseDailyPartitionFromHourly(
 
 
 class CoinbaseDailyPartition(
-    FinTickDailyMixin, FinTickDailyHourlyMixin, CoinbaseMixin, FinTickREST
+    FinTickDailyMixin,
+    FinTickDailyHourlySequentialIntegerMixin,
+    CoinbaseMixin,
+    FinTickREST,
 ):
     def assert_data_frame(self, data_frame, trades):
         # Duplicates.

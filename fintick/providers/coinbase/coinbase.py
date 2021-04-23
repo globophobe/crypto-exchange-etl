@@ -28,14 +28,15 @@ def coinbase_spot(
     if date_from and date_to:
         # Try loading most recent daily data from hourly
         if date_to == get_hot_date():
-            CoinbaseDailyPartitionFromHourly(
+            ok = CoinbaseDailyPartitionFromHourly(
                 symbol,
                 period_from=date_to,
                 period_to=date_to,
                 verbose=verbose,
             ).main()
-            # Modify date_to by 1 day
-            date_to -= pd.Timedelta("1d")
+            if ok:
+                # Modify date_to by 1 day
+                date_to -= pd.Timedelta("1d")
         CoinbaseDailyPartition(
             symbol,
             period_from=date_from,

@@ -585,11 +585,26 @@ class FinTickDailyHourlyMixin:
         return FirestoreCache(collection).get(document_name)
 
 
+class FinTickDailyHourlySequentialIntegerMixin(FinTickDailyHourlyMixin):
+    def get_pagination_id(self, data=None):
+        timestamp_from, _, _, date_to = parse_period_from_to()
+        # Maybe hourly
+        if self.partition == date_to:
+            hourly_data = self.get_hourly_document(timestamp_from)
+            document = self.get_document_name(self.partition)
+            assert (
+                hourly_data and hourly_data["open"]
+            ), f'No "pagination_id" for {document}'
+            return hourly_data["open"]["index"]
+        return super().get_pagination_id(data)
+
+
 class FinTickDailyPartitionFromHourlyMixin(FinTickDailyMixin, FinTickDailyHourlyMixin):
     def main(self):
         for partition in self.iter_partition():
             data = self.get_document(partition)
-            if not self.is_data_OK(data):
+            ok = self.is_data_OK(data)
+            if not ok:
                 period = pendulum.period(self.timestamp_from, self.timestamp_to)
                 documents = [
                     self.get_hourly_document(timestamp)
@@ -600,6 +615,8 @@ class FinTickDailyPartitionFromHourlyMixin(FinTickDailyMixin, FinTickDailyHourly
                     data_frame = self.load_data_frame()
                     self.write(data_frame)
                     self.clean_firestore()
+                    return True
+            return ok
 
     def get_bigquery_loader(self, table_id, partition_decorator):
         return BigQueryDaily(table_id, partition_decorator)
@@ -656,18 +673,6 @@ class FinTickDailyPartitionFromHourlySequentialIntegerMixin(
     However, the trade uid of both exchanges is a sequential integer id. If complete, the
     daily partition can be copied from hourly partitions.
     """
-
-    def get_pagination_id(self, data=None):
-        timestamp_from, _, _, date_to = parse_period_from_to()
-        # Maybe hourly
-        if self.partition == date_to:
-            hourly_data = self.get_hourly_document(timestamp_from)
-            document = self.get_document_name(self.partition)
-            assert (
-                hourly_data and hourly_data["open"]
-            ), f'No "pagination_id" for {document}'
-            return hourly_data["open"]["index"]
-        return super().get_pagination_id(data)
 
     def get_is_complete(self, trades):
         now = datetime.datetime.utcnow()
