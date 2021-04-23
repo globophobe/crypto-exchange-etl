@@ -8,6 +8,7 @@ from ...fintick import (
     FinTickHourlyMixin,
     FinTickREST,
 )
+from ...s3downloader import assert_type_decimal
 from .base import CoinbaseMixin
 from .constants import BTCUSD, ETHUSD
 
@@ -40,4 +41,7 @@ class CoinbaseDailyPartition(
                 expected = len(trades) + 21
         diff = data_frame["index"].diff().dropna()
         assert abs(diff.sum()) == expected
-        super().assert_data_frame(data_frame, trades)
+        # Decimal
+        assert_type_decimal(data_frame, ("price", "volume", "notional"))
+        # Timestamps
+        self.assert_timestamps(data_frame)

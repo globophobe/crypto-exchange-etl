@@ -197,13 +197,12 @@ def iter_api(
             pagination_id = get_api_pagination_id(
                 timestamp, last_data=last_data, data=data
             )
-            if not pagination_id:
-                stop_iteration = True
             # B/C unique
             last_data = data
             # Append results
             results += data
-            is_last_iteration = len(data) < max_results
+            less_than_max_results = len(data) < max_results
+            is_last_iteration = pagination_id is None or less_than_max_results
             is_within_partition = timestamp_from and timestamp > timestamp_from
             # Maybe stop iteration
             if is_last_iteration or not is_within_partition:

@@ -4,6 +4,16 @@ from google.cloud import bigquery
 from .base import BaseBigQueryLoader
 
 
+class BigQueryTenMinutePartition(BaseBigQueryLoader):
+    def set_partition(self, table):
+        table.time_partitioning = bigquery.RangePartitioning(
+            field="interval",
+            type_=bigquery.PartitionRange(start=0, end=1440, interval=10),
+            # No expiration_ms as will overwrite
+        )
+        return table
+
+
 class BigQueryHourly(BaseBigQueryLoader):
     def set_partition(self, table):
         table.time_partitioning = bigquery.TimePartitioning(

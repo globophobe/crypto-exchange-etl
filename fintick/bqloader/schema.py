@@ -4,111 +4,113 @@ SINGLE_SYMBOL_ORDER_BY = "timestamp, nanoseconds, index"
 
 MULTIPLE_SYMBOL_ORDER_BY = "symbol, timestamp, nanoseconds, index"
 
+
+def field(name, t):
+    return bigquery.SchemaField(name, t, "REQUIRED")
+
+
 SINGLE_SYMBOL_SCHEMA = [
-    bigquery.SchemaField("uid", "STRING", "REQUIRED"),  # For verification
-    bigquery.SchemaField("timestamp", "TIMESTAMP", "REQUIRED"),
-    bigquery.SchemaField("nanoseconds", "INTEGER", "REQUIRED"),
-    bigquery.SchemaField("price", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("volume", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("notional", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("tickRule", "INTEGER", "REQUIRED"),
-    bigquery.SchemaField("index", "INTEGER", "REQUIRED"),
+    field("uid", "STRING"),  # For verification
+    field("timestamp", "TIMESTAMP"),
+    field("nanoseconds", "INTEGER"),
+    field("price", "BIGNUMERIC"),
+    field("volume", "BIGNUMERIC"),
+    field("notional", "BIGNUMERIC"),
+    field("tickRule", "INTEGER"),
+    field("index", "INTEGER"),
 ]
 
 MULTIPLE_SYMBOL_SCHEMA = (
-    [
-        bigquery.SchemaField("uid", "STRING", "REQUIRED"),
-        bigquery.SchemaField("symbol", "STRING", "REQUIRED"),
-    ]
+    [field("uid", "STRING"), field("symbol", "STRING")]
     + SINGLE_SYMBOL_SCHEMA[1:-1]
-    + [
-        bigquery.SchemaField("expiry", "TIMESTAMP", "REQUIRED"),
-        bigquery.SchemaField("index", "INTEGER", "REQUIRED"),
-    ]
+    + [field("expiry", "TIMESTAMP"), field("index", "INTEGER")]
 )
 
 
 SINGLE_SYMBOL_AGGREGATE_SCHEMA = [
-    bigquery.SchemaField("timestamp", "TIMESTAMP", "REQUIRED"),
-    bigquery.SchemaField("nanoseconds", "INTEGER", "REQUIRED"),
-    bigquery.SchemaField("price", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("vwap", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("volume", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("notional", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("ticks", "INTEGER", "REQUIRED"),
-    bigquery.SchemaField("tickRule", "INTEGER", "REQUIRED"),
-    bigquery.SchemaField("index", "INTEGER", "REQUIRED"),
+    field("timestamp", "TIMESTAMP"),
+    field("nanoseconds", "INTEGER"),
+    field("price", "BIGNUMERIC"),
+    field("vwap", "BIGNUMERIC"),
+    field("volume", "BIGNUMERIC"),
+    field("notional", "BIGNUMERIC"),
+    field("ticks", "INTEGER"),
+    field("tickRule", "INTEGER"),
+    field("index", "INTEGER"),
 ]
 
 
 MULTIPLE_SYMBOL_AGGREGATE_SCHEMA = (
-    [
-        bigquery.SchemaField("symbol", "STRING", "REQUIRED"),
-    ]
+    [field("symbol", "STRING")]
     + SINGLE_SYMBOL_AGGREGATE_SCHEMA[:-1]
-    + [
-        bigquery.SchemaField("expiry", "TIMESTAMP", "REQUIRED"),
-        bigquery.SchemaField("index", "INTEGER", "REQUIRED"),
-    ]
+    + [field("expiry", "TIMESTAMP"), field("index", "INTEGER")]
 )
 
 
+SINGLE_SYMBOL_INTERVAL_RANGE_SCHEMA = [
+    field("partition", "INTEGER")
+] + SINGLE_SYMBOL_SCHEMA
+
+
+MULTIPLE_SINGLE_SYMBOL_RANGE_INTERVAL_SCHEMA = [
+    field("partition", "INTEGER")
+] + MULTIPLE_SYMBOL_SCHEMA
+
+
+SINGLE_SYMBOL_INTERVAL_RANGE_AGGREGATE_SCHEMA = [
+    field("partition", "INTEGER")
+] + SINGLE_SYMBOL_AGGREGATE_SCHEMA
+
+
+MULTIPLE_SYMBOL_INTERVAL_RANGE_AGGREGATE_SCHEMA = [
+    field("partition", "INTEGER")
+] + MULTIPLE_SYMBOL_AGGREGATE_SCHEMA
+
+
 SINGLE_SYMBOL_BAR_SCHEMA = [
-    bigquery.SchemaField("timestamp", "TIMESTAMP", "REQUIRED"),
-    bigquery.SchemaField("nanoseconds", "INTEGER", "REQUIRED"),
-    bigquery.SchemaField("open", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("high", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("low", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("close", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("buyVolume", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("volume", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("buyNotional", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("notional", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("buyTicks", "INTEGER", "REQUIRED"),
-    bigquery.SchemaField("ticks", "INTEGER", "REQUIRED"),
+    field("timestamp", "TIMESTAMP"),
+    field("nanoseconds", "INTEGER"),
+    field("open", "BIGNUMERIC"),
+    field("high", "BIGNUMERIC"),
+    field("low", "BIGNUMERIC"),
+    field("close", "BIGNUMERIC"),
+    field("buyVolume", "BIGNUMERIC"),
+    field("volume", "BIGNUMERIC"),
+    field("buyNotional", "BIGNUMERIC"),
+    field("notional", "BIGNUMERIC"),
+    field("buyTicks", "INTEGER"),
+    field("ticks", "INTEGER"),
     bigquery.SchemaField(
         "topN",
         "RECORD",
         mode="REPEATED",
         fields=(
-            bigquery.SchemaField("timestamp", "TIMESTAMP", "REQUIRED"),
-            bigquery.SchemaField("nanoseconds", "INTEGER", "REQUIRED"),
-            bigquery.SchemaField("price", "BIGNUMERIC", "REQUIRED"),
-            bigquery.SchemaField("vwap", "BIGNUMERIC", "REQUIRED"),
-            bigquery.SchemaField("volume", "BIGNUMERIC", "REQUIRED"),
-            bigquery.SchemaField("notional", "BIGNUMERIC", "REQUIRED"),
-            bigquery.SchemaField("ticks", "INTEGER", "REQUIRED"),
-            bigquery.SchemaField("tickRule", "INTEGER", "REQUIRED"),
+            field("timestamp", "TIMESTAMP"),
+            field("nanoseconds", "INTEGER"),
+            field("price", "BIGNUMERIC"),
+            field("vwap", "BIGNUMERIC"),
+            field("volume", "BIGNUMERIC"),
+            field("notional", "BIGNUMERIC"),
+            field("ticks", "INTEGER"),
+            field("tickRule", "INTEGER"),
         ),
     ),
 ]
 
 
 MULTIPLE_SYMBOL_BAR_SCHEMA = (
-    [
-        bigquery.SchemaField("symbol", "STRING", "REQUIRED"),
-    ]
+    [field("symbol", "STRING")]
     + SINGLE_SYMBOL_BAR_SCHEMA
-    + [
-        bigquery.SchemaField("expiry", "TIMESTAMP", "REQUIRED"),
-    ]
+    + [field("expiry", "TIMESTAMP")]
 )
 
-SINGLE_SYMBOL_THRESHOLD_SCHEMA = [
-    bigquery.SchemaField("uid", "STRING", "REQUIRED")  # For join
-] + SINGLE_SYMBOL_BAR_SCHEMA
-
-MULTIPLE_SYMBOL_THRESHOLD_SCHEMA = [
-    bigquery.SchemaField("uid", "STRING", "REQUIRED")  # For join
-] + MULTIPLE_SYMBOL_BAR_SCHEMA
 
 SINGLE_SYMBOL_RENKO_SCHEMA = [
-    bigquery.SchemaField("timestamp", "TIMESTAMP", "REQUIRED"),
-    bigquery.SchemaField("nanoseconds", "INTEGER", "REQUIRED"),
-    bigquery.SchemaField("level", "BIGNUMERIC", "REQUIRED"),
-    bigquery.SchemaField("price", "BIGNUMERIC", "REQUIRED"),
+    field("timestamp", "TIMESTAMP"),
+    field("nanoseconds", "INTEGER"),
+    field("level", "BIGNUMERIC"),
+    field("price", "BIGNUMERIC"),
 ] + SINGLE_SYMBOL_BAR_SCHEMA[6:]
 
-MULTIPLE_SYMBOL_RENKO_SCHEMA = [
-    bigquery.SchemaField("symbol", "STRING", "REQUIRED"),
-] + SINGLE_SYMBOL_RENKO_SCHEMA
+
+MULTIPLE_SYMBOL_RENKO_SCHEMA = [field("symbol", "STRING")] + SINGLE_SYMBOL_RENKO_SCHEMA

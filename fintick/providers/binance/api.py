@@ -18,9 +18,17 @@ def get_binance_api_pagination_id(timestamp, last_data=[], data=[]):
     # Like bybit, binance pagination feels like an IQ test
     if len(data):
         last_trade = data[-1]
-        pagination_id = last_trade["id"] - len(data)
-        assert pagination_id > 0
-        return pagination_id
+        last_id = last_trade["id"]
+        pagination_id = last_id - len(data)
+        # Is it the last_id? If so, stop_iteration
+        if last_id == 1:
+            return None
+        # Calculated pagination_id will be negative if remaining trades is
+        # less than MAX_RESULTS
+        elif pagination_id <= 0:
+            return 1
+        else:
+            return pagination_id
 
 
 def get_binance_api_timestamp(trade):
