@@ -4,7 +4,7 @@
 import typer
 
 import pathfix  # noqa: F401
-from fintick.providers.bitfinex import bitfinex_perpetual
+from fintick.exchanges.bitfinex import bitfinex_perpetual
 from fintick.utils import set_environment
 
 

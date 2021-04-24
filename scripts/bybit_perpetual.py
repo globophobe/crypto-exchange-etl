@@ -4,7 +4,7 @@
 import typer
 
 import pathfix  # noqa: F401
-from fintick.providers.bybit import bybit_perpetual
+from fintick.exchanges.bybit import bybit_perpetual
 from fintick.utils import set_environment
 
 

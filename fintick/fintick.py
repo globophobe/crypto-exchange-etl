@@ -585,7 +585,15 @@ class FinTickDailyHourlyMixin:
         return FirestoreCache(collection).get(document_name)
 
 
-class FinTickDailyHourlySequentialIntegerMixin(FinTickDailyHourlyMixin):
+class FinTickDailySequentialIntegerMixin(FinTickDailyMixin, FinTickDailyHourlyMixin):
+    """
+    Binance and Coinbase REST APIs are slow to iterate. As a result, cloud functions
+    may timeout iterating for the daily partition.
+
+    However, the trade uid of both exchanges is a sequential integer id. If complete, the
+    daily partition can be copied from hourly partitions.
+    """
+
     def get_pagination_id(self, data=None):
         timestamp_from, _, _, date_to = parse_period_from_to()
         # Maybe hourly
@@ -597,6 +605,23 @@ class FinTickDailyHourlySequentialIntegerMixin(FinTickDailyHourlyMixin):
             ), f'No "pagination_id" for {document}'
             return hourly_data["open"]["index"]
         return super().get_pagination_id(data)
+
+    def get_is_complete(self, trades):
+        now = datetime.datetime.utcnow()
+        assert not self.partition == self.get_partition(now)
+        if len(trades):
+            last_index = trades[0]["index"]
+            timestamp_from, _, _, date_to = parse_period_from_to()
+            # Maybe hourly
+            if self.partition == date_to:
+                data = self.get_hourly_document(timestamp_from)
+            # Maybe no trades in last partition
+            else:
+                data = self.firestore_cache.get_one(
+                    where=["open.index", "==", last_index + 1]
+                )
+            assert data["open"]["index"] == last_index + 1
+        return True
 
 
 class FinTickDailyPartitionFromHourlyMixin(FinTickDailyMixin, FinTickDailyHourlyMixin):
@@ -663,43 +688,19 @@ class FinTickDailyPartitionFromHourlyMixin(FinTickDailyMixin, FinTickDailyHourly
         pass
 
 
-class FinTickDailyPartitionFromHourlySequentialIntegerMixin(
-    FinTickDailyPartitionFromHourlyMixin
-):
-    """
-    Binance and Coinbase REST APIs are slow to iterate. As a result, cloud functions
-    may timeout iterating for the daily partition.
-
-    However, the trade uid of both exchanges is a sequential integer id. If complete, the
-    daily partition can be copied from hourly partitions.
-    """
-
-    def get_is_complete(self, trades):
-        now = datetime.datetime.utcnow()
-        assert not self.partition == self.get_partition(now)
-        if len(trades):
-            last_index = trades[0]["index"]
-            timestamp_from, _, _, date_to = parse_period_from_to()
-            # Maybe hourly
-            if self.partition == date_to:
-                data = self.get_hourly_document(timestamp_from)
-            # Maybe no trades in last partition
-            else:
-                data = self.firestore_cache.get_one(
-                    where=["open.index", "==", last_index + 1]
-                )
-            assert data["open"]["index"] == last_index + 1
-        return True
-
-    def assert_data_frame(self, data_frame, trades):
-        super().assert_data_frame(data_frame, trades)
-        if len(data_frame):
-            first_trade = data_frame.iloc[0]
-            first_index = int(first_trade["index"])  # B/C int64
-            # Last partition
-            data = self.firestore_cache.get_one(
-                where=["close.index", "==", first_index - 1]
-            )
-            # Is current partition contiguous with last partition?
-            assert data["close"]["index"] == first_index - 1
-            assert data["close"]["timestamp"] < first_trade["timestamp"]
+# class FinTickWTF(
+#     FinTickDailyPartitionFromHourlyMixin
+# ):
+#     def assert_data_frame(self, data_frame, trades):
+#         super().assert_data_frame(data_frame, trades)
+#         if len(data_frame):
+#             first_trade = data_frame.iloc[0]
+#             # Coerce to int b/c df is int64, but fs data is int32
+#             first_index = int(first_trade["index"])
+#             # Last partition
+#             data = self.firestore_cache.get_one(
+#                 where=["close.index", "==", first_index - 1]
+#             )
+#             # Is current partition contiguous with last partition?
+#             assert data["close"]["index"] == first_index - 1
+#             assert data["close"]["timestamp"] < first_trade["timestamp"]

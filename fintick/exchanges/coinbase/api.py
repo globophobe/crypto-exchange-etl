@@ -47,10 +47,9 @@ def get_coinbase_api_response(url, pagination_id=None, retry=30):
             return response.json()
         else:
             raise Exception(f"HTTP {response.status_code}: {response.reason_phrase}")
-    except HTTPX_ERRORS as e:
+    except HTTPX_ERRORS:
         if retry > 0:
             time.sleep(1)
             retry -= 1
             return get_coinbase_api_response(url, pagination_id, retry)
-        else:
-            raise e
+        raise

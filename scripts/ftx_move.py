@@ -4,7 +4,7 @@
 import typer
 
 import pathfix  # noqa: F401
-from fintick.providers.ftx import ftx_move
+from fintick.exchanges.ftx import ftx_move
 from fintick.utils import set_environment
 
 

@@ -4,7 +4,7 @@
 import typer
 
 import pathfix  # noqa: F401
-from fintick.providers.bitmex import bitmex_perpetual
+from fintick.exchanges.bitmex import bitmex_perpetual
 from fintick.utils import set_environment
 
 

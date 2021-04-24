@@ -4,7 +4,7 @@
 import typer
 
 import pathfix  # noqa: F401
-from fintick.providers.coinbase import coinbase_spot
+from fintick.exchanges.coinbase import coinbase_spot
 from fintick.utils import set_environment
 
 

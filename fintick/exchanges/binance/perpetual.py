@@ -1,8 +1,7 @@
 from ...fintick import (
     FinTick,
-    FinTickDailyHourlySequentialIntegerMixin,
-    FinTickDailyMixin,
-    FinTickDailyPartitionFromHourlySequentialIntegerMixin,
+    FinTickDailyPartitionFromHourlyMixin,
+    FinTickDailySequentialIntegerMixin,
     FinTickHourlyMixin,
     FinTickREST,
 )
@@ -14,14 +13,13 @@ class BinancePerpetualHourlyPartition(FinTickHourlyMixin, BinanceMixin, FinTickR
 
 
 class BinanceDailyPartitionFromHourly(
-    FinTickDailyPartitionFromHourlySequentialIntegerMixin, BinanceMixin, FinTick
+    FinTickDailyPartitionFromHourlyMixin, BinanceMixin, FinTick
 ):
     pass
 
 
 class BinancePerpetualDailyPartition(
-    FinTickDailyMixin,
-    FinTickDailyHourlySequentialIntegerMixin,
+    FinTickDailySequentialIntegerMixin,
     BinanceMixin,
     FinTickREST,
 ):

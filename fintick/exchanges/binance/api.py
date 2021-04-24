@@ -1,3 +1,4 @@
+import datetime
 import os
 import time
 
@@ -5,7 +6,13 @@ import httpx
 
 from ...constants import BINANCE_API_KEY, HTTPX_ERRORS
 from ...utils import iter_api, parse_datetime
-from .constants import API_URL, MAX_RESULTS, MIN_ELAPSED_PER_REQUEST
+from .constants import (
+    API_URL,
+    BINANCE_MAX_WEIGHT,
+    MAX_RESULTS,
+    MAX_WEIGHT,
+    MIN_ELAPSED_PER_REQUEST,
+)
 
 
 def get_binance_api_url(url, pagination_id):
@@ -37,7 +44,8 @@ def get_binance_api_timestamp(trade):
 
 def get_trades(symbol, timestamp_from, pagination_id, log_prefix=None):
     url = f"{API_URL}/historicalTrades?symbol={symbol}&limit={MAX_RESULTS}"
-    return iter_api(
+    os.environ[BINANCE_MAX_WEIGHT] = str(1195)
+    result = iter_api(
         url,
         get_binance_api_pagination_id,
         get_binance_api_timestamp,
@@ -48,6 +56,8 @@ def get_trades(symbol, timestamp_from, pagination_id, log_prefix=None):
         pagination_id=pagination_id,
         log_prefix=log_prefix,
     )
+    del os.environ[BINANCE_MAX_WEIGHT]
+    return result
 
 
 def get_binance_api_response(url, pagination_id=None, retry=30):
@@ -55,15 +65,23 @@ def get_binance_api_response(url, pagination_id=None, retry=30):
         headers = {"X-MBX-APIKEY": os.environ.get(BINANCE_API_KEY, None)}
         response = httpx.get(get_binance_api_url(url, pagination_id), headers=headers)
         if response.status_code == 200:
+            # Response 429, when x-mbx-used-weight-1m is 1200
+            weight = response.headers.get("x-mbx-used-weight-1m", 0)
+            max_weight = os.environ.get(BINANCE_MAX_WEIGHT, MAX_WEIGHT)
+            if int(weight) >= int(max_weight):
+                now = datetime.datetime.utcnow()
+                current_minute = now.replace(second=0, microsecond=0)
+                next_minute = current_minute + datetime.timedelta(minutes=1)
+                delta = next_minute - now
+                time.sleep(delta.total_seconds())
             data = response.json()
             data.reverse()  # Descending order, please
             return data
         else:
             raise Exception(f"HTTP {response.status_code}: {response.reason_phrase}")
-    except HTTPX_ERRORS as e:
+    except HTTPX_ERRORS:
         if retry > 0:
             time.sleep(1)
             retry -= 1
             return get_binance_api_response(url, pagination_id, retry)
-        else:
-            raise e
+        raise
