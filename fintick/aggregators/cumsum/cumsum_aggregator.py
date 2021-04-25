@@ -1,9 +1,9 @@
 from ...utils import parse_period_from_to
 from ..utils import assert_aggregated_table
-from .renko import RenkoAggregatorDailyPartition, RenkoAggregatorHourlyPartition
+from .renko import CumsumAggregatorDailyPartition, CumsumAggregatorHourlyPartition
 
 
-def renko_aggregator(
+def cumsum_aggregator(
     source_table: str = None,
     box_size: str = None,
     top_n: int = 0,

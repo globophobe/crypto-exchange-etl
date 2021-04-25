@@ -9,7 +9,7 @@ def candle_aggregator(
     top_n: int = 0,
     period_from: str = None,
     period_to: str = None,
-    has_multiple_symbols: bool = False,
+    futures: bool = False,
     verbose: bool = False,
 ):
     assert source_table, 'Required param "source_table" not provided'
@@ -25,7 +25,7 @@ def candle_aggregator(
             top_n=top_n,
             period_from=date_from,
             period_to=date_to,
-            has_multiple_symbols=has_multiple_symbols,
+            futures=futures,
             verbose=verbose,
         ).main()
     if timestamp_from and timestamp_to:
@@ -35,6 +35,6 @@ def candle_aggregator(
             top_n=top_n,
             period_from=timestamp_from,
             period_to=timestamp_to,
-            has_multiple_symbols=has_multiple_symbols,
+            futures=futures,
             verbose=verbose,
         ).main()

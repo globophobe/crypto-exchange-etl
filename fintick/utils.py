@@ -220,25 +220,6 @@ def iter_api(
     return results, is_last_iteration
 
 
-def get_delta(
-    date=None, microseconds=0, milliseconds=0, seconds=0, minutes=0, hours=0, days=0
-):
-    assert microseconds or milliseconds or seconds or minutes or days
-    if isinstance(date, datetime.date):
-        date = datetime.datetime.combine(date, datetime.datetime.min.time())
-    else:
-        date = datetime.datetime.utcnow()
-    date += datetime.timedelta(
-        microseconds=microseconds,
-        milliseconds=milliseconds,
-        seconds=seconds,
-        minutes=minutes,
-        hours=hours,
-        days=days,
-    )
-    return date.date()
-
-
 def absolute_delta(value, delta):
     if delta.total_seconds() < 0:
         value += delta

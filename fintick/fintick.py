@@ -32,11 +32,7 @@ from .utils import parse_period_from_to
 
 class FinTick:
     def __init__(
-        self,
-        api_symbol,
-        period_from=None,
-        period_to=None,
-        verbose=False,
+        self, api_symbol, period_from=None, period_to=None, verbose=False,
     ):
         self.api_symbol = api_symbol
         self.period_from = period_from
@@ -456,6 +452,10 @@ class FinTickHourlyMixin:
             )
             self.partition = partition
             yield partition
+
+    def get_is_complete(self, trades):
+        # TODO: Hourly partition should ensure trades exist
+        return super().get_is_complete(trades)
 
 
 class FinTickDailyMixin:

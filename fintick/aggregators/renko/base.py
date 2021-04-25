@@ -22,7 +22,7 @@ class BaseRenkoAggregator(BaseCacheAggregator):
 
     @property
     def schema(self):
-        if self.has_multiple_symbols:
+        if self.futures:
             return MULTIPLE_SYMBOL_RENKO_SCHEMA
         else:
             return SINGLE_SYMBOL_RENKO_SCHEMA
@@ -36,15 +36,12 @@ class BaseRenkoAggregator(BaseCacheAggregator):
         return data_frame, data
 
     def process_data_frame(self, data_frame, cache):
-        if self.has_multiple_symbols:
+        if self.futures:
             samples = []
             for symbol in data_frame.symbol.unique():
                 df = data_frame[data_frame.symbol == symbol]
                 data, cache = aggregate_renko(
-                    df,
-                    cache,
-                    self.box_size,
-                    top_n=self.top_n,
+                    df, cache, self.box_size, top_n=self.top_n,
                 )
                 samples.append(data)
             if all([isinstance(sample, pd.DataFrame) for sample in samples]):
@@ -53,9 +50,6 @@ class BaseRenkoAggregator(BaseCacheAggregator):
                 data = samples
         else:
             data, cache = aggregate_renko(
-                data_frame,
-                cache,
-                self.box_size,
-                top_n=self.top_n,
+                data_frame, cache, self.box_size, top_n=self.top_n,
             )
         return data, cache

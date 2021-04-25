@@ -8,6 +8,28 @@ from ...utils import date_range, get_container_name
 from .spot import CoinbaseSpotETL
 
 
+def coinbase_spot_ai_platform_trigger(event, context):
+    """
+    Some Coinbase symbols, such as BTCUSD may run longer than 540 seconds.
+    GCP AI platform training jobs, are essentially background jobs that
+    run in Docker containers.  Although not the cheapest option, it is sufficient.
+    """
+    data = base64_decode_event(event)
+    api_symbol = data.get("api_symbol", None)
+    date_from = data.get("date", get_delta(days=-1).isoformat())
+    date_to = get_delta(parse_datetime(date_from), days=1).isoformat()
+    aggregate = data.get("aggregate", True)
+    verbose = data.get("verbose", False)
+    if api_symbol:
+        CoinbaseSpotETLAIPlatformTrigger(
+            api_symbol=api_symbol,
+            date_from=date_from,
+            date_to=date_to,
+            aggregate=aggregate,
+            verbose=verbose,
+        ).main()
+
+
 class CoinbaseSpotETLAIPlatformTrigger(CoinbaseSpotETL):
     def main(self):
         has_data = all(
@@ -23,9 +45,7 @@ class CoinbaseSpotETLAIPlatformTrigger(CoinbaseSpotETL):
             training_inputs = {
                 "scaleTier": "BASIC",
                 "region": region,
-                "masterConfig": {
-                    "imageUri": container_name,
-                },
+                "masterConfig": {"imageUri": container_name,},
                 "scheduling": {"maxWaitTime": "7200s", "maxRunningTime": "3600s"},
                 "args": [
                     "--script",

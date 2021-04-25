@@ -33,12 +33,12 @@ class BaseAggregator(FinTick):
         symbol=None,
         period_from=None,
         period_to=None,
-        has_multiple_symbols=False,
+        futures=False,
         verbose=False,
     ):
         self.source_table = source_table
         self.destination_table = destination_table
-        self.has_multiple_symbols = has_multiple_symbols
+        self.futures = futures
         self.period_from = self.get_period_from(period_from)
         self.period_to = self.get_period_to(period_to)
         self.verbose = verbose
@@ -76,7 +76,7 @@ class BaseAggregator(FinTick):
 
     @property
     def order_by(self):
-        if self.has_multiple_symbols:
+        if self.futures:
             return MULTIPLE_SYMBOL_ORDER_BY
         else:
             return SINGLE_SYMBOL_ORDER_BY
@@ -127,7 +127,7 @@ class BaseAggregator(FinTick):
     def get_timestamps_from_data(self, data, attr):
         timestamps = []
         if data:
-            if self.has_multiple_symbols:
+            if self.futures:
                 for key, symbol in data.items():
                     if isinstance(symbol, dict):
                         timestamp = symbol[attr]["timestamp"]
@@ -244,14 +244,14 @@ class DailyAggregatorMixin(FinTickDailyMixin):
 class BaseCacheAggregator(BaseAggregator):
     @property
     def source_schema(self):
-        if self.has_multiple_symbols:
+        if self.futures:
             return MULTIPLE_SYMBOL_AGGREGATE_SCHEMA
         else:
             return SINGLE_SYMBOL_AGGREGATE_SCHEMA
 
     @property
     def schema(self):
-        if self.has_multiple_symbols:
+        if self.futures:
             return MULTIPLE_SYMBOL_BAR_SCHEMA
         else:
             return SINGLE_SYMBOL_BAR_SCHEMA

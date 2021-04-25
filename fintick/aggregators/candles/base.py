@@ -25,7 +25,7 @@ class BaseCandleAggregator(BaseCacheAggregator):
         return data_frame, data
 
     def process_data_frame(self, data_frame, cache):
-        if self.has_multiple_symbols:
+        if self.futures:
             samples = []
             for symbol in data_frame.symbol.unique():
                 df = data_frame[data_frame.symbol == symbol]

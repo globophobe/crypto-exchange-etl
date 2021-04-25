@@ -15,14 +15,14 @@ class BaseTradeAggregator(BaseAggregator):
 
     @property
     def source_schema(self):
-        if self.has_multiple_symbols:
+        if self.futures:
             return MULTIPLE_SYMBOL_SCHEMA
         else:
             return SINGLE_SYMBOL_SCHEMA
 
     @property
     def schema(self):
-        if self.has_multiple_symbols:
+        if self.futures:
             return MULTIPLE_SYMBOL_AGGREGATE_SCHEMA
         else:
             return SINGLE_SYMBOL_AGGREGATE_SCHEMA
