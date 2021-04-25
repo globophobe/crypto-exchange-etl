@@ -1,5 +1,6 @@
 import os
 import time
+import warnings
 
 import google.auth
 import pandas as pd
@@ -90,19 +91,22 @@ class BaseBigQueryLoader:
         job_config = bigquery.LoadJobConfig(
             schema=schema, write_disposition="WRITE_TRUNCATE"
         )
-        if isinstance(data, pd.DataFrame):
-            # If data_frame, get columns
-            if len(data):
-                columns = get_schema_columns(schema)
-                data = data[columns]
-                self.bq.load_table_from_dataframe(
+        with warnings.catch_warnings():
+            # B/C UserWarning: Unable to determine type for field '{BIGNUMERIC}'.
+            warnings.simplefilter("ignore", category=UserWarning)
+            if isinstance(data, pd.DataFrame):
+                # If data_frame, get columns
+                if len(data):
+                    columns = get_schema_columns(schema)
+                    data = data[columns]
+                    self.bq.load_table_from_dataframe(
+                        data, self.partition, job_config=job_config
+                    ).result()
+            else:
+                # If json, assume correct
+                self.bq.load_table_from_json(
                     data, self.partition, job_config=job_config
                 ).result()
-        else:
-            # If json, assume correct
-            self.bq.load_table_from_json(
-                data, self.partition, job_config=job_config
-            ).result()
 
     def delete_table(self):
         if self.table_exists():

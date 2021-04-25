@@ -24,10 +24,13 @@ Exchanges
 
 * Binance REST API
 * Bitfinex REST API
+* Bitflyer REST API
 * BitMEX REST API, and [S3](https://public.bitmex.com/) repository
 * Bybit REST API, and [S3](https://public.bybit.com/) repository
 * Coinbase Pro REST API
+* Deribit REST API
 * FTX REST API
+* Upbit REST API
 
 Note: Exchanges without paginated REST APIs are not supported.
 
