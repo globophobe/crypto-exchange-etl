@@ -1,9 +1,8 @@
 from flask import jsonify
 
 from fintick import fintick_api
-from fintick.aggregators import candle_aggregator, trade_aggregator
-
-from .utils import get_request_data
+from fintick.aggregators import candle_aggregator, renko_aggregator, trade_aggregator
+from fintick.utils import get_request_data
 
 
 def fintick_api_gcp(request):
@@ -13,35 +12,24 @@ def fintick_api_gcp(request):
     return jsonify({"ok": True})
 
 
-def trade_aggregator_gcp(request):
-    params = ("source_table", "period_from", "period_to", "futures")
+def fintick_aggregator_gcp(request):
+    params = (
+        "aggregator",
+        "source_table",
+        "period_from",
+        "period_to",
+        "futures",
+    )
     kwargs = get_request_data(request, params)
-    trade_aggregator(**kwargs)
+    aggregator = kwargs.pop("aggregator", None)
+    if aggregator == "trade_aggregator":
+        trade_aggregator(**kwargs)
+    elif aggregator == "candle_aggregator":
+        kwargs.update(get_request_data(request, ("timeframe", "top_n")))
+        candle_aggregator(**kwargs)
+    elif aggregator == "renko_aggregator":
+        kwargs.update(get_request_data(request, ("box_size", "top_n")))
+        renko_aggregator(**kwargs)
+    else:
+        raise NotImplementedError
     return jsonify({"ok": True})
-
-
-def candle_aggregator_gcp(request):
-    params = (
-        "source_table",
-        "timeframe",
-        "top_n",
-        "period_from",
-        "period_to",
-        "futures",
-    )
-    kwargs = get_request_data(request, params)
-    candle_aggregator(**kwargs)
-    return jsonify({"OK": True})
-
-
-def renko_aggregator_gcp(request):
-    params = (
-        "source_table",
-        "box_size" "top_n",
-        "period_from",
-        "period_to",
-        "futures",
-    )
-    kwargs = get_request_data(request, params)
-    candle_aggregator(**kwargs)
-    return jsonify({"OK": True})

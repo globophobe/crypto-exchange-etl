@@ -23,9 +23,7 @@ class CoinbaseDailyPartitionFromHourly(
 
 
 class CoinbaseDailyPartition(
-    FinTickDailySequentialIntegerMixin,
-    CoinbaseMixin,
-    FinTickREST,
+    FinTickDailySequentialIntegerMixin, CoinbaseMixin, FinTickREST,
 ):
     def assert_data_frame(self, data_frame, trades):
         # Duplicates.

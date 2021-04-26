@@ -4,30 +4,20 @@ import re
 from invoke import task
 
 from fintick.constants import BIGQUERY_LOCATION
-from fintick.main import (
-    binance_perpetual_gcp,
-    bitfinex_perpetual_gcp,
-    bitmex_futures_gcp,
-    bitmex_perpetual_gcp,
-    coinbase_spot_gcp,
-    ftx_move_gcp,
-    trade_aggregator_gcp,
-)
 from fintick.utils import get_container_name, get_deploy_env_vars, set_environment
+from main import fintick_aggregator_gcp, fintick_api_gcp
 
 set_environment()
 
 NAME_REGEX = re.compile(r"^(\w+)_gcp$")
 
-ALL_HTTP_FUNCTIONS = [
-    binance_perpetual_gcp,
-    bitfinex_perpetual_gcp,
-    bitmex_perpetual_gcp,
-    bitmex_futures_gcp,
-    coinbase_spot_gcp,
-    ftx_move_gcp,
-    trade_aggregator_gcp,
-]
+ALL_HTTP_FUNCTIONS = [fintick_api_gcp, fintick_aggregator_gcp]
+
+
+@task
+def export_requirements(c):
+    c.run("poetry export --output requirements.txt")
+    c.run("poetry export --dev --output requirements-dev.txt")
 
 
 @task
@@ -51,18 +41,25 @@ def deploy_http_function(c, entry_point, memory=256):
 
 @task
 def deploy_all_http_functions(c):
-    # Two versions of each function
+    # Ensure requirements
+    export_requirements(c)
+    # Four versions of each function
     for function in ALL_HTTP_FUNCTIONS:
         deploy_http_function(c, function.__name__, memory=256)  # 256MB
+    for function in ALL_HTTP_FUNCTIONS:
+        deploy_http_function(c, function.__name__, memory=512)  # 512MB
+    for function in ALL_HTTP_FUNCTIONS:
+        deploy_http_function(c, function.__name__, memory=1024)  # 1GB
     for function in ALL_HTTP_FUNCTIONS:
         deploy_http_function(c, function.__name__, memory=2048)  # 2GB
 
 
 @task
 def build_container(c, hostname="asia.gcr.io", image="cryptotick"):
+    # Ensure requirements
+    export_requirements(c)
     build_args = get_deploy_env_vars(pre="--build-arg ", sep=" ")
     name = get_container_name(hostname, image)
-    # Build
     cmd = f"""
         docker build \
             {build_args} \
@@ -75,9 +72,7 @@ def build_container(c, hostname="asia.gcr.io", image="cryptotick"):
 @task
 def push_container(c, hostname="asia.gcr.io", image="cryptotick"):
     name = get_container_name(hostname, image)
-    # Push
-    cmd = f"docker push {name}"
-    c.run(cmd)
+    c.run(f"docker push {name}")
 
 
 # @task

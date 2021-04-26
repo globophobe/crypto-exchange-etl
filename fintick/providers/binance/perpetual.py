@@ -19,8 +19,6 @@ class BinanceDailyPartitionFromHourly(
 
 
 class BinancePerpetualDailyPartition(
-    FinTickDailySequentialIntegerMixin,
-    BinanceMixin,
-    FinTickREST,
+    FinTickDailySequentialIntegerMixin, BinanceMixin, FinTickREST,
 ):
     pass

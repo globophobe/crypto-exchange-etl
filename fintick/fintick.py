@@ -32,7 +32,11 @@ from .utils import parse_period_from_to
 
 class FinTick:
     def __init__(
-        self, api_symbol, period_from=None, period_to=None, verbose=False,
+        self,
+        api_symbol,
+        period_from=None,
+        period_to=None,
+        verbose=False,
     ):
         self.api_symbol = api_symbol
         self.period_from = period_from
@@ -453,10 +457,6 @@ class FinTickHourlyMixin:
             self.partition = partition
             yield partition
 
-    def get_is_complete(self, trades):
-        # TODO: Hourly partition should ensure trades exist
-        return super().get_is_complete(trades)
-
 
 class FinTickDailyMixin:
     def get_document_name(self, date):
@@ -562,12 +562,10 @@ class FinTickDailyS3Mixin(FinTickDailyMixin):
         data_frame = strip_nanoseconds(data_frame)
         data_frame = calculate_notional(data_frame)
         data_frame = calculate_tick_rule(data_frame)
-        return data_frame
+        columns = get_schema_columns(self.schema)
+        return data_frame[columns]
 
     def write(self, data_frame, is_complete=False):
-        # Columns
-        columns = get_schema_columns(self.schema)
-        data_frame = data_frame[columns]
         # BigQuery
         suffix = self.get_suffix(sep="_")
         table_id = get_table_id(self.exchange, suffix=suffix)
@@ -675,6 +673,7 @@ class FinTickDailyPartitionFromHourlyMixin(FinTickDailyMixin, FinTickDailyHourly
         return "date(timestamp) = @date"
 
     def write(self, data_frame, is_complete=True):
+        # TODO: Merge this method with FinTickDailyS3Mixin
         # BigQuery
         suffix = self.get_suffix(sep="_")
         table_id = get_table_id(self.exchange, suffix=suffix)
@@ -686,21 +685,3 @@ class FinTickDailyPartitionFromHourlyMixin(FinTickDailyMixin, FinTickDailyHourly
 
     def clean_firestore(self):
         pass
-
-
-# class FinTickWTF(
-#     FinTickDailyPartitionFromHourlyMixin
-# ):
-#     def assert_data_frame(self, data_frame, trades):
-#         super().assert_data_frame(data_frame, trades)
-#         if len(data_frame):
-#             first_trade = data_frame.iloc[0]
-#             # Coerce to int b/c df is int64, but fs data is int32
-#             first_index = int(first_trade["index"])
-#             # Last partition
-#             data = self.firestore_cache.get_one(
-#                 where=["close.index", "==", first_index - 1]
-#             )
-#             # Is current partition contiguous with last partition?
-#             assert data["close"]["index"] == first_index - 1
-#             assert data["close"]["timestamp"] < first_trade["timestamp"]

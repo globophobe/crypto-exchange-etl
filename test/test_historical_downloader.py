@@ -1,14 +1,17 @@
 import datetime
 
-from fintick.providers.bitmex import BITMEX, XBTUSD, BitmexPerpetualETL
-from fintick.providers.bitmex.constants import MIN_DATE
+from fintick.providers.bitmex.perpetual import (
+    BITMEX,
+    XBTUSD,
+    BitmexPerpetualDailyPartition,
+)
 from fintick.s3downloader import HistoricalDownloader
-
-SYMBOLS = [XBTUSD]
 
 
 def assert_200(exchange):
-    url = BitmexPerpetualETL(SYMBOLS).get_url(MIN_DATE)
+    date = datetime.date(2016, 5, 14)
+    controller = BitmexPerpetualDailyPartition(XBTUSD, period_from=date, period_to=date)
+    url = controller.get_url(date)
     data_frame = HistoricalDownloader(url).main()
     assert len(data_frame) > 0
 
@@ -17,7 +20,10 @@ def assert_404(exchange):
     now = datetime.datetime.utcnow()
     delta = now + datetime.timedelta(days=1)
     tomorrow = delta.date()
-    url = BitmexPerpetualETL(SYMBOLS).get_url(tomorrow)
+    controller = BitmexPerpetualDailyPartition(
+        XBTUSD, period_from=tomorrow, period_to=tomorrow
+    )
+    url = controller.get_url(tomorrow)
     data_frame = HistoricalDownloader(url).main()
     assert data_frame is None
 

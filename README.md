@@ -19,24 +19,8 @@ Data is stored in Google BigQuery. It is cost performant. For the price of a fan
 Some state, such as pagination keys, is stored in Firestore.
 
 
-Exchanges
----------
-
-* Binance REST API
-* Bitfinex REST API
-* Bitflyer REST API
-* BitMEX REST API, and [S3](https://public.bitmex.com/) repository
-* Bybit REST API, and [S3](https://public.bybit.com/) repository
-* Coinbase Pro REST API
-* Deribit REST API
-* FTX REST API
-* Upbit REST API
-
-Note: Exchanges without paginated REST APIs are not supported.
-
-
 Example tick data
-------------
+-----------------
 
 | uid | timestamp (1)      | nanoseconds (2) | price (3) | volume (3) | notional (3) | tickRule (4) | index (5) |
 |-----|--------------------|-----------------|-----------|------------|--------------|--------------|-----------|
@@ -71,15 +55,32 @@ Aggregating trades in this way, can increase information, and reduce number of r
 
 Referring to the previous table, trades 10 and 11 are aggregated into a single trade. Those trades have equal timestamps and are both market buys.
 
-| uid |    timestamp       | ... | price  | vwap (1)      | volume |   notional   | ticks | tickRule | ... |
-|-----|--------------------|-----|--------|---------------|--------|--------------|-------|----------|-----|
-| ... | ...00:27:17.367156 | ... | 456.98 | 456.98        | 2000   | 4.3765591... | 1     | -1       | ... |
-| ... | ...00:44:59.302471 | ... | 457.11 | 457.106678... | 3000   | 6.5630195... | 2     | 1        | ... |
+| uid |    timestamp       | ... | price  | vwap (1)      | volume |   notional   | ticks | tickRule |
+|-----|--------------------|-----|--------|---------------|--------|--------------|-------|----------|
+| ... | ...00:27:17.367156 | ... | 456.98 | 456.98        | 2000   | 4.3765591... | 1     | -1       |
+| ... | ...00:44:59.302471 | ... | 457.11 | 457.106678... | 3000   | 6.5630195... | 2     | 1        |
 
 Note:
 
 1. VWAP
 * The volume weighted average price paid for the aggregated trade. Suppose, a trader wants to buy 3 notional, and market buys. The trader buys 1 notional at $1. However, only 10 notional is offered at $1. The next offer is 1 notional at $2, and the next 1 notional at $3. In this case, vwap is the sum of volume, 1 + 2 + 3 = 6, divided by the sum of notional 1 + 1 + 1 = 3. Average price paid is 6 / 3 = $2.
+
+
+Supported exchanges
+-------------------
+
+* Binance REST API
+* Bitfinex REST API
+* Bitflyer REST API
+* BitMEX REST API, and [S3](https://public.bitmex.com/) repository
+* Bybit REST API, and [S3](https://public.bybit.com/) repository
+* Coinbase Pro REST API
+* Deribit REST API
+* FTX REST API
+* Upbit REST API
+
+Note: Exchanges without paginated REST APIs are not supported.
+
 
 Installation
 ------------

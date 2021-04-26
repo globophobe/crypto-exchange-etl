@@ -153,7 +153,7 @@ class BaseAggregator(FinTick):
                     if not self.destination_has_data(document):
                         data_frame = self.get_data_frame()
                         # Are there any trades?
-                        if len(data_frame):
+                        if data_frame is not None:
                             df = self.process_data_frame(data_frame)
                             self.write(df)
                         # No trades
