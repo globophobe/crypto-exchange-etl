@@ -3,6 +3,7 @@ from decimal import Decimal
 import numpy as np
 
 from ...fintick import FinTickNonSequentialIntegerMixin
+from ...utils import normalize_symbol
 from .api import get_bitfinex_api_timestamp, get_trades
 from .constants import BITFINEX
 
@@ -25,7 +26,7 @@ class BitfinexMixin(FinTickNonSequentialIntegerMixin):
 
     @property
     def symbol(self):
-        return self.api_symbol[1:]  # API symbol prepended with t
+        return normalize_symbol(self.api_symbol, exchange=BITFINEX)
 
     def get_pagination_id(self, data=None):
         return int(self.timestamp_to.timestamp() * 1000)  # Millisecond

@@ -1,10 +1,20 @@
 import os
 import re
 
+import yaml
+from google.api_core.exceptions import AlreadyExists
+from google.cloud import pubsub_v1
+from google.protobuf.duration_pb2 import Duration
 from invoke import task
 
-from fintick.constants import BIGQUERY_LOCATION
-from fintick.utils import get_container_name, get_deploy_env_vars, set_environment
+from fintick.constants import BIGQUERY_LOCATION, PROJECT_ID
+from fintick.providers.constants import PROVIDERS
+from fintick.utils import (
+    get_container_name,
+    get_deploy_env_vars,
+    get_topic_id,
+    set_environment,
+)
 from main import fintick_aggregator_gcp, fintick_api_gcp
 
 set_environment()
@@ -55,6 +65,79 @@ def deploy_all_http_functions(c):
 
 
 @task
+def deploy_scheduler(
+    c,
+    entry_point,
+    payload="{}",
+    schedule="1 * * * *",  # First minute, of every hour
+    timezone="Etc/UTC",
+):
+    name = NAME_REGEX.match(entry_point).group(1).replace("_", "-")
+    cmd = f"""
+        gcloud scheduler jobs create pubsub {name} \
+            --schedule='{schedule}' \
+            --time-zone='{timezone}' \
+            --topic={name} \
+            --message-body='{payload}'
+    """
+    c.run(cmd)
+
+
+@task
+def create_pubsub(c, topic):
+    project_id = os.environ[PROJECT_ID]
+    publisher = pubsub_v1.PublisherClient()
+    subscriber = pubsub_v1.SubscriberClient()
+    topic_path = publisher.topic_path(project_id, topic)
+    subscription_path = subscriber.subscription_path(project_id, topic)
+
+    try:
+        topic = publisher.create_topic(request={"name": topic_path})
+    except AlreadyExists:
+        pass
+
+    # Retain messages for 1 hour
+    message_retention_duration = Duration()
+    message_retention_duration.FromSeconds(60 * 60)
+    request = {
+        "name": subscription_path,
+        "topic": topic_path,
+        "message_retention_duration": message_retention_duration,
+        "retain_acked_messages": True,
+        "enable_message_ordering": True,
+    }
+    with subscriber:
+        try:
+            subscriber.create_subscription(request=request)
+        except AlreadyExists:
+            pass
+
+
+@task
+def create_all_pubsub(c):
+    try:
+        with open("config.yaml", "r") as f:
+            config = yaml.safe_load(f)
+            for provider in config:
+                assert provider in PROVIDERS, f'Unknown data provider, "{provider}"'
+            for provider in config:
+                data = config[provider]
+                symbols = data.get("symbols", "")
+                futures = data.get("futures", "")
+                assert symbols or futures, f'No symbols or futures, "{provider}"'
+                collections = (symbols.split(","), futures.split(","))
+                for is_future, collection in enumerate(collections):
+                    for symbol in collection:
+                        topic = get_topic_id(provider, symbol, is_future=is_future)
+                        create_pubsub(c, topic)
+                        import pdb
+
+                        pdb.set_trace()
+    except FileNotFoundError:
+        print("No config.yaml")
+
+
+@task
 def build_container(c, hostname="asia.gcr.io", image="cryptotick"):
     # Ensure requirements
     export_requirements(c)
@@ -73,25 +156,6 @@ def build_container(c, hostname="asia.gcr.io", image="cryptotick"):
 def push_container(c, hostname="asia.gcr.io", image="cryptotick"):
     name = get_container_name(hostname, image)
     c.run(f"docker push {name}")
-
-
-# @task
-# def deploy_scheduler(
-#     c,
-#     entry_point,
-#     payload="{}",
-#     schedule="1 * * * *",  # First minute, of every hour
-#     timezone="Etc/UTC",
-# ):
-#     topic = TOPIC_REGEX.match(entry_point).group(1).replace("_", "-")
-#     cmd = f"""
-#         gcloud scheduler jobs create pubsub {topic} \
-#             --schedule='{schedule}' \
-#             --time-zone='{timezone}' \
-#             --topic={topic} \
-#             --message-body='{payload}'
-#     """
-#     c.run(cmd)
 
 
 # @task

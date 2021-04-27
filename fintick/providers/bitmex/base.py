@@ -121,7 +121,7 @@ class BitmexDailyMultiSymbolS3Mixin(BitmexDailyS3Mixin):
         return MULTIPLE_SYMBOL_SCHEMA
 
     def get_suffix(self, sep="-"):
-        return f"{self.symbol}USD{sep}futures"
+        return f"{self.symbol}{sep}futures"
 
     @property
     def log_prefix(self):

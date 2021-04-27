@@ -27,7 +27,7 @@ from .s3downloader import (
     strip_nanoseconds,
     utc_timestamp,
 )
-from .utils import parse_period_from_to
+from .utils import normalize_symbol, parse_period_from_to
 
 
 class FinTick:
@@ -57,7 +57,7 @@ class FinTick:
 
     @property
     def symbol(self):
-        return self.api_symbol.replace("-", "").replace("/", "")
+        return normalize_symbol(self.api_symbol)
 
     def get_suffix(self, sep="_"):
         return self.symbol
@@ -636,6 +636,7 @@ class FinTickDailyPartitionFromHourlyMixin(FinTickDailyMixin, FinTickDailyHourly
                 has_data = all([document and document["ok"] for document in documents])
                 if has_data:
                     data_frame = self.load_data_frame()
+                    self.assert_data_frame(data_frame)
                     self.write(data_frame)
                     self.clean_firestore()
                     return True

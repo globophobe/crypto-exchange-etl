@@ -95,9 +95,9 @@ google-api-python-client==2.2.0 \
 google-auth-httplib2==0.1.0 \
     --hash=sha256:a07c39fd632becacd3f07718dfd6021bf396978f03ad3ce4321d060015cc30ac \
     --hash=sha256:31e49c36c6b5643b57e82617cb3e021e3e1d2df9da63af67252c02fa9c1f4a10
-google-auth==1.29.0 \
-    --hash=sha256:010f011c4e27d3d5eb01106fba6aac39d164842dfcd8709955c4638f5b11ccf8 \
-    --hash=sha256:f30a672a64d91cc2e3137765d088c5deec26416246f7a9e956eaf69a8d7ed49c
+google-auth==1.30.0 \
+    --hash=sha256:9ad25fba07f46a628ad4d0ca09f38dcb262830df2ac95b217f9b0129c9e42206 \
+    --hash=sha256:588bdb03a41ecb4978472b847881e5518b5d9ec6153d3d679aa127a55e13b39f
 google-cloud-bigquery-storage==2.4.0 \
     --hash=sha256:be7d2f88c617876c4b05b766cb32bd0730ee575745767db7c79df270d09ac80b \
     --hash=sha256:784513bec243e4bcab0ca5a4218701b599b94f5ec1cfe345f64db487c5ff270e
@@ -113,9 +113,9 @@ google-cloud-firestore==2.1.0; platform_python_implementation != "PyPy" \
 google-cloud-pubsub==2.4.1 \
     --hash=sha256:e60caa67e26d842fd08daf19097efdaf82be7afb996398cf67bddc03a86b8120 \
     --hash=sha256:8cfad9f777dfbf6715f1d72a529c476ad33758c280826ace532600ae2ead9b48
-google-cloud-storage==1.37.1 \
-    --hash=sha256:e06a4797c87ac73c4a74801539fdf0a91761c3014281ff58b7b29f15b34c206e \
-    --hash=sha256:63a9dab155bf81c51354db3d11f3e83a1db7d58eff453f1ce51ffa565d32617b
+google-cloud-storage==1.38.0 \
+    --hash=sha256:162011d66f64b8dc5d7936609a5daf0066cc521231546aea02c126a5559446c4 \
+    --hash=sha256:69499560ec8234339ce831704419a2288c409a422f6e9ed1facc9345412ee637
 google-crc32c==1.1.2; python_version >= "3.5" \
     --hash=sha256:dff5bd1236737f66950999d25de7a78144548ebac7788d30ada8c1b6ead60b27 \
     --hash=sha256:8ed8f6dc4f55850cba2eb22b78902ad37f397ee02692d3b8e00842e9af757321 \

@@ -1,0 +1,19 @@
+binance:
+  symbols: BTCUSDT, ETHUSDT
+bitfinex:
+  symbols: tBTCUSD, tETHUSD
+bitflyer:
+  symbols: BTC-JPY, ETH-JPY
+bitmex:
+  symbols: XBTUSD, ETHUSD
+  futures: XBT, ETH
+bybit:
+  symbols: BTC-USD, ETH-USD
+coinbase:
+  symbols: BTC-USD, ETH-USD
+deribit:
+  symbols: BTC-PERPETUAL
+ftx:
+  symbols: BTC/USD, ETH/USD, BTC-PERP, ETH-PERP, BTC-MOVE
+upbit:
+  symbols: BTC-KRW, ETH-KRW

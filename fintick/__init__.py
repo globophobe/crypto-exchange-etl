@@ -1,7 +1,6 @@
 from fintick.providers.binance import BINANCE, binance_perpetual
 from fintick.providers.bitfinex import BITFINEX, bitfinex_perpetual
-
-# from fintick.providers.bitflyer import BITFLYER, bitflyer_perpetual
+from fintick.providers.bitflyer import BITFLYER, bitflyer_perpetual
 from fintick.providers.bitmex import BITMEX, bitmex_futures, bitmex_perpetual
 from fintick.providers.bybit import BYBIT, bybit_perpetual
 from fintick.providers.coinbase import COINBASE, coinbase_spot
@@ -37,8 +36,8 @@ def fintick_api(
             raise NotImplementedError
         else:
             bitfinex_perpetual(**kwargs)
-    # elif provider == BITFLYER:
-    #     bitflyer_perpetual(**kwargs)
+    elif provider == BITFLYER:
+        bitflyer_perpetual(**kwargs)
     elif provider == BITMEX:
         if futures:
             bitmex_futures(**kwargs)

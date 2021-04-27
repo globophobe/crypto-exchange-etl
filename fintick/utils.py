@@ -60,6 +60,23 @@ def set_env_list(key, value):
         os.environ[key] = " ".join(values)
 
 
+def normalize_symbol(symbol, provider=None):
+    if provider and provider == "bitfinex":
+        return symbol[1:]  # API symbol prepended with t
+    else:
+        for char in ("-", "/", "_"):
+            symbol = symbol.replace(char, "")
+        return symbol
+
+
+def get_topic_id(provider, symbol, is_future=False):
+    symbol = normalize_symbol(symbol, provider)
+    topic_name = f"{provider}-{symbol}"
+    if is_future:
+        topic_name += "-futures"
+    return topic_name
+
+
 def get_container_name(hostname="asia.gcr.io", image="cryptotick"):
     project_id = os.environ[PROJECT_ID]
     return f"{hostname}/{project_id}/{image}"

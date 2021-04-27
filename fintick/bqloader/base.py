@@ -72,8 +72,9 @@ class BaseBigQueryLoader:
     def read(self, sql, job_config):
         query = self.bq.query(sql, job_config=job_config)
         result = query.result()
-        if result.num_results > 0:
-            return result().to_dataframe()
+        # If no rows, may throw error
+        if result.total_rows > 0:
+            return result.to_dataframe()
 
     def write_table(self, schema, data, retry=5):
         # Retry n times
