@@ -1,5 +1,4 @@
 import datetime
-import re
 
 import pandas as pd
 import pendulum
@@ -16,13 +15,10 @@ from ..bqloader import (
     get_schema_columns,
     stringify_datetime_types,
 )
-from ..fintick import FinTick, FinTickDailyMixin, FinTickHourlyMixin
+from ..controllers import FinTick, FinTickDailyMixin, FinTickHourlyMixin
 from ..fscache import FirestoreCache, firestore_data
 from ..utils import get_hot_date, get_hot_time
 from .lib import get_timestamp_from_to
-from .utils import get_firestore_collection, strip_hot_from_aggregated
-
-HOT_REGEX = re.compile(r"^(\w+)\.(\w+)_(\w+)$")
 
 
 class BaseAggregator(FinTick):
@@ -44,12 +40,10 @@ class BaseAggregator(FinTick):
         self.verbose = verbose
 
     def get_source(self, sep="_"):
-        _, table_name = self.source_table.split(".")
-        return table_name.replace("_", sep)
+        return self.source_table.split(".").replace("_", sep)
 
     def get_destination(self, sep="_"):
-        _, table_name = self.destination_table.split(".")
-        return table_name.replace("_", sep)
+        return self.destination_table.replace("_", sep)
 
     @property
     def log_prefix(self):
@@ -143,7 +137,7 @@ class BaseAggregator(FinTick):
     def destination_has_data(self, document):
         return self.firestore_destination.has_data(document)
 
-    def main(self):
+    def main(self, data_frame=None):
         """Partitions are independent, so iterates backwards"""
         if self.period_from and self.period_to:
             for partition in self.iter_partition():
@@ -151,7 +145,8 @@ class BaseAggregator(FinTick):
                 document = self.get_document_name(partition)
                 if self.source_has_data(document):
                     if not self.destination_has_data(document):
-                        data_frame = self.get_data_frame()
+                        if data_frame is None:
+                            data_frame = self.get_data_frame()
                         # Are there any trades?
                         if data_frame is not None:
                             df = self.process_data_frame(data_frame)
@@ -333,8 +328,8 @@ class HourlyCacheAggregatorMixin(HourlyAggregatorMixin):
         _, table_name = self.source_table.split(".")
         hot_time = get_hot_time()
         if self.partition == hot_time:
-            table_id = strip_hot_from_aggregated(self.source_table)
-            collection = get_firestore_collection(table_id)
+            # table_id = strip_hot_from_aggregated(self.source_table)
+            collection = self.get_source(sep="-")
             hot_time -= pd.Timedelta("1d")
             document = get_hot_date().isoformat()
             data = FirestoreCache(collection).get(document)

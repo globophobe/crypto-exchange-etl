@@ -1,9 +1,8 @@
 import pendulum
 
-from ...fintick import FinTickDailyPartitionFromHourlyMixin
+from ...controllers import FinTickDailyPartitionFromHourlyMixin
 from ...fscache import FirestoreCache
 from ..base import DailyAggregatorMixin, HourlyAggregatorMixin
-from ..utils import assert_aggregated_table, get_firestore_collection
 from .base import BaseTradeAggregator
 
 
@@ -24,8 +23,7 @@ class TradeAggregatorDailyPartitionFromHourly(
         return period_to
 
     def get_hourly_document(self, timestamp):
-        table_name = assert_aggregated_table(self.destination_table, hot=True)
-        collection = get_firestore_collection(table_name)
+        collection = self.destination_table(sep="-")
         document_name = timestamp.strftime("%Y-%m-%dT%H")
         return FirestoreCache(collection).get(document_name)
 
@@ -51,7 +49,7 @@ class TradeAggregatorDailyPartitionFromHourly(
                     self.clean_firestore()
 
     def load_data_frame(self):
-        table_id = assert_aggregated_table(self.destination_table, hot=True)
+        table_id = self.destination_table
         sql = f"""
             SELECT * FROM {table_id}
             WHERE {self.where_clause}

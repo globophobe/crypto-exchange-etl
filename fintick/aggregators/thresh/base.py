@@ -2,28 +2,26 @@ import pandas as pd
 
 from ..base import BaseCacheAggregator
 from .lib import (
-    aggregate_cumsum,
+    aggregate_thresh,
     get_cache_for_era_length,
-    get_initial_cumsum_cache,
-    parse_cumsum_attr,
+    get_initial_thresh_cache,
     parse_era_length,
+    parse_thresh_attr,
 )
 
-# Notional 1500, topN 150
 
-
-class BaseCumsumAggregator(BaseCacheAggregator):
+class BaseThreshAggregator(BaseCacheAggregator):
     def __init__(
         self,
         source_table,
-        cumsum_attr,
-        cumsum_value,
+        thresh_attr,
+        thresh_value,
         era_length="M",
         top_n=10,
         **kwargs,
     ):
-        self.thresh_attr = parse_cumsum_attr(cumsum_attr)
-        self.thresh_value = int(cumsum_value)
+        self.thresh_attr = parse_thresh_attr(thresh_attr)
+        self.thresh_value = int(thresh_value)
         self.era_length = parse_era_length(era_length)
         destination_table = (
             f"{source_table}_{self.thresh_attr}{self.thresh_value}{self.era_length}"
@@ -34,14 +32,14 @@ class BaseCumsumAggregator(BaseCacheAggregator):
         self.top_n = top_n
 
     def get_initial_cache(self, data_frame):
-        cache = get_initial_cumsum_cache(self.thresh_attr)
+        cache = get_initial_thresh_cache(self.thresh_attr)
         return data_frame, cache
 
     def get_cache(self, data_frame):
         data_frame, data = super().get_cache(data_frame)
         # Reinitialize cache for new era
         data = get_cache_for_era_length(
-            data, self.timestamp_from, self.era_length, self.cumsum_attr
+            data, self.timestamp_from, self.era_length, self.thresh_attr
         )
         return data_frame, data
 
@@ -51,8 +49,12 @@ class BaseCumsumAggregator(BaseCacheAggregator):
             for symbol in data_frame.symbol.unique():
                 df = data_frame[data_frame.symbol == symbol]
 
-                data, cache = aggregate_cumsum(
-                    df, cache, self.cumsum_attr, self.cumsum_value, top_n=self.top_n
+                data, cache = aggregate_thresh(
+                    df,
+                    cache,
+                    self.thresh_attr,
+                    self.thresh_value,
+                    top_n=self.top_n,
                 )
                 samples.append(data)
             if all([isinstance(sample, pd.DataFrame) for sample in samples]):
@@ -60,7 +62,11 @@ class BaseCumsumAggregator(BaseCacheAggregator):
             else:
                 data = samples
         else:
-            data, cache = aggregate_cumsum(
-                data_frame, cache, self.cumsum_attr, self.cumsum_value, top_n=self.top_n
+            data, cache = aggregate_thresh(
+                data_frame,
+                cache,
+                self.thresh_attr,
+                self.thresh_value,
+                top_n=self.top_n,
             )
         return data, cache

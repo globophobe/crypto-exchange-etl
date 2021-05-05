@@ -1,4 +1,4 @@
-from .constants import FTX
+from .constants import BTCMOVE, FTX
 from .ftx import ftx_move, ftx_perpetual
 
-__all__ = ["FTX", "ftx_perpetual", "ftx_move"]
+__all__ = ["FTX", "BTCMOVE", "ftx_perpetual", "ftx_move"]

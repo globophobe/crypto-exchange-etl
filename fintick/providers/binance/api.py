@@ -15,6 +15,14 @@ from .constants import (
 )
 
 
+def get_binance_api_sleep_duration():
+    now = datetime.datetime.utcnow()
+    current_minute = now.replace(second=0, microsecond=0)
+    next_minute = current_minute + datetime.timedelta(minutes=1)
+    delta = next_minute - now
+    return delta.total_seconds()
+
+
 def get_binance_api_url(url, pagination_id):
     if pagination_id:
         return url + f"&fromId={pagination_id}"
@@ -69,11 +77,9 @@ def get_binance_api_response(url, pagination_id=None, retry=30):
             weight = response.headers.get("x-mbx-used-weight-1m", 0)
             max_weight = os.environ.get(BINANCE_MAX_WEIGHT, MAX_WEIGHT)
             if int(weight) >= int(max_weight):
-                now = datetime.datetime.utcnow()
-                current_minute = now.replace(second=0, microsecond=0)
-                next_minute = current_minute + datetime.timedelta(minutes=1)
-                delta = next_minute - now
-                time.sleep(delta.total_seconds())
+                sleep_duration = get_binance_api_sleep_duration()
+                print(f"Max requests, sleeping {sleep_duration} seconds")
+                time.sleep(sleep_duration)
             data = response.json()
             data.reverse()  # Descending order, please
             return data

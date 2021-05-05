@@ -6,7 +6,13 @@ from fintick.utils import get_request_data
 
 
 def fintick_api_gcp(request):
-    params = ("provider", "symbol", "period_from", "period_to", "futures")
+    params = (
+        "provider",
+        "symbol",
+        "period_from",
+        "period_to",
+        "futures",
+    )
     kwargs = get_request_data(request, params)
     fintick_api(**kwargs)
     return jsonify({"ok": True})

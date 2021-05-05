@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from ...fintick import FinTickSequentialIntegerMixin
+from ...controllers import FinTickSequentialIntegerMixin
 from .api import get_binance_api_timestamp, get_trades
 from .constants import BINANCE
 

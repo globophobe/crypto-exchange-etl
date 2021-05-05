@@ -1,4 +1,4 @@
-from ...fintick import FinTick, FinTickHourlyMixin, FinTickREST
+from ...controllers import FinTick, FinTickHourlyMixin, FinTickREST
 from .base import BitmexDailyS3Mixin, BitmexMixin, BitmexRESTMixin
 
 

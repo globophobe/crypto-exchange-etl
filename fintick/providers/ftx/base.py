@@ -1,4 +1,4 @@
-from ...fintick import FinTickNonSequentialIntegerMixin
+from ...controllers import FinTickNonSequentialIntegerMixin
 from .api import format_ftx_api_timestamp, get_ftx_api_timestamp, get_trades
 from .constants import FTX
 

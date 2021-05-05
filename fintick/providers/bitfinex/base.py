@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import numpy as np
 
-from ...fintick import FinTickNonSequentialIntegerMixin
+from ...controllers import FinTickNonSequentialIntegerMixin
 from ...utils import normalize_symbol
 from .api import get_bitfinex_api_timestamp, get_trades
 from .constants import BITFINEX

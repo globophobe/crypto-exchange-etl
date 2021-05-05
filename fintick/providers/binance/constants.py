@@ -6,5 +6,4 @@ MAX_RESULTS = 1000
 
 # Response 429, when x-mbx-used-weight-1m is 1200
 MAX_WEIGHT = 1200
-# RPS throttled within get_binance_api_response
 MIN_ELAPSED_PER_REQUEST = 0

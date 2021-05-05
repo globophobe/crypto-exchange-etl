@@ -1,5 +1,6 @@
-from ...fintick import (
+from ...controllers import (
     FinTick,
+    FinTickDailyMixin,
     FinTickDailyPartitionFromHourlyMixin,
     FinTickDailySequentialIntegerMixin,
     FinTickHourlyMixin,
@@ -19,6 +20,9 @@ class BinanceDailyPartitionFromHourly(
 
 
 class BinancePerpetualDailyPartition(
-    FinTickDailySequentialIntegerMixin, BinanceMixin, FinTickREST,
+    FinTickDailySequentialIntegerMixin,
+    FinTickDailyMixin,
+    BinanceMixin,
+    FinTickREST,
 ):
     pass

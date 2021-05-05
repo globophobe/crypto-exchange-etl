@@ -6,7 +6,7 @@ import httpx
 
 from ...constants import HTTPX_ERRORS
 from ...utils import iter_api, parse_datetime
-from .constants import BTC, MAX_RESULTS, MIN_ELAPSED_PER_REQUEST, URL
+from .constants import API_URL, BTC, MAX_RESULTS, MIN_ELAPSED_PER_REQUEST
 
 
 def get_ftx_api_url(url, pagination_id):
@@ -40,7 +40,7 @@ def format_ftx_api_timestamp(timestamp):
 
 
 def get_trades(symbol, timestamp_from, pagination_id, log_prefix=None):
-    url = f"{URL}/markets/{symbol}/trades"
+    url = f"{API_URL}/markets/{symbol}/trades"
     return iter_api(
         url,
         get_ftx_api_pagination_id,
@@ -56,13 +56,13 @@ def get_trades(symbol, timestamp_from, pagination_id, log_prefix=None):
 
 def get_active_futures(root_symbol=BTC, verbose=True):
     # Not currently paginated
-    url = f"{URL}/futures"
+    url = f"{API_URL}/futures"
     return get_futures(url, root_symbol, verbose=verbose)
 
 
 def get_expired_futures(root_symbol=BTC, verbose=True):
     # Not currently paginated
-    url = f"{URL}/expired_futures"
+    url = f"{API_URL}/expired_futures"
     return get_futures(url, root_symbol, verbose=verbose)
 
 

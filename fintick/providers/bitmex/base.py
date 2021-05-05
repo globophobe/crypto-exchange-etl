@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from ...bqloader import MULTIPLE_SYMBOL_SCHEMA
-from ...fintick import FinTickDailyS3Mixin
+from ...controllers import FinTickDailyS3Mixin
 from .api import (
     format_bitmex_api_timestamp,
     get_active_futures,

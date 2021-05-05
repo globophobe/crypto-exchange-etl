@@ -1,11 +1,16 @@
 from decimal import Decimal
 
-from ...fintick import FinTickSequentialIntegerMixin
+from ...controllers import (
+    FinTickIntegerPaginationMixin,
+    FinTickNonSequentialIntegerMixin,
+)
 from .api import get_bitflyer_api_timestamp, get_trades
 from .constants import BITFLYER
 
 
-class BitflyerMixin(FinTickSequentialIntegerMixin):
+class BitflyerMixin(FinTickIntegerPaginationMixin, FinTickNonSequentialIntegerMixin):
+    """Bitflyer pagination is both by integer, and non-sequential"""
+
     @property
     def exchange(self):
         return BITFLYER
@@ -36,9 +41,3 @@ class BitflyerMixin(FinTickSequentialIntegerMixin):
 
     def get_index(self, trade):
         return int(trade["id"])
-
-    def get_is_complete(self, trades):
-        data = self.firestore_cache.get_one(
-            where=["open.index", "==", trades[0]["index"] + 1]
-        )
-        return data is not None

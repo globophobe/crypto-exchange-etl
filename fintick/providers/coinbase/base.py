@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from ...fintick import FinTickSequentialIntegerMixin
+from ...controllers import FinTickSequentialIntegerMixin
 from .api import get_coinbase_api_timestamp, get_trades
 from .constants import COINBASE
 

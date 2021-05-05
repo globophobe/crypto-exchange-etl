@@ -1,40 +1,40 @@
 from ...utils import parse_period_from_to
-from ..utils import assert_aggregated_table
+from ..utils import get_source_table
 from .renko import RenkoAggregatorDailyPartition, RenkoAggregatorHourlyPartition
 
 
 def renko_aggregator(
-    source_table: str = None,
-    box_size: str = None,
+    provider: str,
+    symbol: str,
+    period_from: str,
+    period_to: str,
+    box_size: str,
     top_n: int = 0,
-    period_from: str = None,
-    period_to: str = None,
     futures: bool = False,
     verbose: bool = False,
 ):
-    assert source_table, 'Required param "source_table" not provided'
     assert box_size, 'Required param "box_size" not provided'
     timestamp_from, timestamp_to, date_from, date_to = parse_period_from_to(
         period_from=period_from, period_to=period_to
     )
-    # Daily partitions, then hourly partitions
+    # Reversed, daily then hourly
     if date_from and date_to:
         RenkoAggregatorDailyPartition(
-            assert_aggregated_table(source_table),
-            box_size=box_size,
-            top_n=top_n,
+            get_source_table(provider, symbol, futures=futures),
             period_from=date_from,
             period_to=date_to,
             futures=futures,
+            box_size=box_size,
+            top_n=top_n,
             verbose=verbose,
         ).main()
     if timestamp_from and timestamp_to:
         RenkoAggregatorHourlyPartition(
-            assert_aggregated_table(source_table, hot=True),
-            box_size=box_size,
-            top_n=top_n,
+            get_source_table(provider, symbol, futures=futures, hot=True),
             period_from=timestamp_from,
             period_to=timestamp_to,
             futures=futures,
+            box_size=box_size,
+            top_n=top_n,
             verbose=verbose,
         ).main()

@@ -6,10 +6,12 @@ import time
 from pathlib import Path
 
 import pandas as pd
+import pendulum
 from google.cloud import pubsub_v1
 
 from .constants import (
     BIGQUERY_HOT,
+    BIGQUERY_MAX_HOT,
     GCP_APPLICATION_CREDENTIALS,
     PRODUCTION_ENV_VARS,
     PROJECT_ID,
@@ -60,21 +62,61 @@ def set_env_list(key, value):
         os.environ[key] = " ".join(values)
 
 
-def normalize_symbol(symbol, provider=None):
-    if provider and provider == "bitfinex":
-        return symbol[1:]  # API symbol prepended with t
+def get_api_max_requests_reset(seconds):
+    return time.time() + seconds
+
+
+def set_api_environ_vars(
+    max_requests_reset_key, total_requests_key, max_requests_reset, reset=False
+):
+    if reset or (max_requests_reset_key not in os.environ):
+        max_requests_reset = get_api_max_requests_reset(max_requests_reset)
+        os.environ[max_requests_reset_key] = str(max_requests_reset)
+    if reset or (total_requests_key not in os.environ):
+        os.environ[total_requests_key] = str(0)
+
+
+def increment_api_total_requests(total_requests_key):
+    total_requests = int(os.environ[total_requests_key])
+    os.environ[total_requests_key] = str(total_requests + 1)
+
+
+def throttle_api_requests(
+    max_requests_reset_key, total_requests_key, max_requests_reset, max_requests
+):
+    set_api_environ_vars(
+        max_requests_reset_key,
+        total_requests_key,
+        max_requests_reset,
+        reset=False,
+    )
+    now = time.time()
+    value = float(os.environ[max_requests_reset_key])
+    if now >= value:
+        set_api_environ_vars(
+            max_requests_reset_key,
+            total_requests_key,
+            max_requests_reset,
+            reset=True,
+        )
     else:
-        for char in ("-", "/", "_"):
-            symbol = symbol.replace(char, "")
-        return symbol
+        total_requests = int(os.environ[total_requests_key])
+        if total_requests >= max_requests:
+            sleep_time = float(os.environ[max_requests_reset_key]) - now
+            if sleep_time > 0:
+                print(f"Max requests, sleeping {sleep_time} seconds")
+                time.sleep(sleep_time)
 
 
-def get_topic_id(provider, symbol, is_future=False):
-    symbol = normalize_symbol(symbol, provider)
-    topic_name = f"{provider}-{symbol}"
-    if is_future:
-        topic_name += "-futures"
-    return topic_name
+def normalize_symbol(symbol, provider=None):
+    for char in ("-", "/", "_"):
+        symbol = symbol.replace(char, "")
+    if provider is not None:
+        if provider == "bitfinex":
+            return symbol[1:]  # API symbol prepended with t
+        if provider == "upbit":
+            return symbol[3:] + symbol[:3]  # Reversed
+    return symbol
 
 
 def get_container_name(hostname="asia.gcr.io", image="cryptotick"):
@@ -99,6 +141,11 @@ def parse_datetime(value, unit="ns"):
 
 def get_hot_date():
     hot_time = datetime.datetime.utcnow() - BIGQUERY_HOT
+    return hot_time.date()
+
+
+def get_max_hot_date():
+    hot_time = datetime.datetime.utcnow() - BIGQUERY_MAX_HOT
     return hot_time.date()
 
 
@@ -156,8 +203,11 @@ def parse_period_from_to(period_from=None, period_to=None, timestamp_to_max=None
     if timestamp_from:
         timestamp_from = timestamp_from.replace(tzinfo=datetime.timezone.utc)
     if timestamp_to:
+        # timestamp_to = timestamp_to.replace(
+        #     minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc
+        # )
         timestamp_to = timestamp_to.replace(
-            minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc
+            second=0, microsecond=0, tzinfo=datetime.timezone.utc
         )
     return timestamp_from, timestamp_to, date_from, date_to
 
@@ -186,6 +236,38 @@ def parse_date(value):
         pass
     else:
         return date
+
+
+def partition_iterator(period_from, period_to, unit, reverse=False):
+    if reverse:
+        period = pendulum.period(period_to, period_from)  # Reverse order
+    else:
+        period = pendulum.period(period_from, period_to)  # Reverse order
+    return period.range(unit)
+
+
+def iter_hourly_partition(period_from, period_to, reverse=True):
+    unit = "hours"
+    for timestamp in partition_iterator(period_from, period_to, unit, reverse=reverse):
+        partition_start = timestamp.replace(minute=0, second=0, microsecond=0)
+        partition_end = (
+            partition_start
+            + pd.Timedelta("1 hour")
+            - datetime.timedelta(microseconds=1)
+        )
+        yield partition_start, partition_end
+
+
+def iter_daily_partition(period_from, period_to, reverse=True):
+    unit = "days"
+    for date in partition_iterator(period_from, period_to, unit, reverse=reverse):
+        partition_start = datetime.datetime.combine(
+            date, datetime.datetime.min.time()
+        ).replace(microsecond=0, tzinfo=datetime.timezone.utc)
+        partition_end = datetime.datetime.combine(
+            date, datetime.datetime.max.time()
+        ).replace(tzinfo=datetime.timezone.utc)
+        yield partition_start, partition_end
 
 
 def iter_api(
@@ -246,6 +328,7 @@ def absolute_delta(value, delta):
 
 
 def get_request_data(request, keys):
+    """For HTTP functions"""
     data = {key: None for key in keys}
     json_data = request.get_json()
     param_data = request.args
@@ -255,12 +338,6 @@ def get_request_data(request, keys):
         elif key in param_data:
             data[key] = param_data[key]
     return data
-
-
-def publish(topic, data):
-    publisher = pubsub_v1.PublisherClient()
-    topic = publisher.topic_path(os.environ[PROJECT_ID], topic)
-    publisher.publish(topic, json.dumps(data).encode())
 
 
 def base64_decode_event(event):
@@ -280,3 +357,9 @@ def base64_decode_event(event):
 def base64_encode_dict(data):
     d = json.dumps(data).encode()
     return base64.b64encode(d)
+
+
+def publish(topic_id, data):
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(os.environ[PROJECT_ID], topic_id)
+    publisher.publish(topic_path, json.dumps(data).encode())

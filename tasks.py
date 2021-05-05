@@ -1,27 +1,30 @@
+import datetime
 import os
 import re
+from uuid import uuid4
 
-import yaml
-from google.api_core.exceptions import AlreadyExists
-from google.cloud import pubsub_v1
-from google.protobuf.duration_pb2 import Duration
 from invoke import task
 
-from fintick.constants import BIGQUERY_LOCATION, PROJECT_ID
-from fintick.providers.constants import PROVIDERS
-from fintick.utils import (
-    get_container_name,
-    get_deploy_env_vars,
-    get_topic_id,
-    set_environment,
+from fintick.constants import BIGQUERY_LOCATION, FINTICK
+from fintick.fscache import FirestoreCache
+from fintick.functions import (
+    fintick_aggregate_bars_gcp,
+    fintick_aggregate_gcp,
+    fintick_api_gcp,
+    fintick_scheduler_gcp,
 )
-from main import fintick_aggregator_gcp, fintick_api_gcp
+from fintick.providers.utils import get_providers_from_config_yaml
+from fintick.utils import get_container_name, get_deploy_env_vars, set_environment
 
 set_environment()
 
 NAME_REGEX = re.compile(r"^(\w+)_gcp$")
 
-ALL_HTTP_FUNCTIONS = [fintick_api_gcp, fintick_aggregator_gcp]
+all_functions = (
+    fintick_api_gcp,
+    fintick_aggregate_gcp,
+    fintick_aggregate_bars_gcp,
+)
 
 
 @task
@@ -31,46 +34,50 @@ def export_requirements(c):
 
 
 @task
-def deploy_http_function(c, entry_point, memory=256):
+def upload_config(c):
+    data = {
+        "providers": get_providers_from_config_yaml(),
+        "timestamp": datetime.datetime.utcnow(),
+    }
+    FirestoreCache(FINTICK).set(uuid4().hex, data)
+
+
+@task
+def deploy_function(c, entry_point, memory=256, is_http=False):
     name = NAME_REGEX.match(entry_point).group(1).replace("_", "-")
     region = os.environ[BIGQUERY_LOCATION]
-    timeout = 540
+    timeout = 540  # Max, 9 minutes
     env_vars = get_deploy_env_vars()
     cmd = f"""
         gcloud functions deploy {name}-{memory} \
             --region={region} \
             --memory={memory}MB \
             --timeout={timeout}s \
-            --runtime=python37 \
+            --runtime=python38 \
             --entry-point={entry_point} \
             --set-env-vars={env_vars} \
-            --trigger-http
     """
+    if is_http:
+        cmd += "--trigger-http"
+    else:
+        cmd += f"--trigger-topic={name}"
     c.run(cmd)
 
 
 @task
-def deploy_all_http_functions(c):
-    # Ensure requirements
-    export_requirements(c)
-    # Four versions of each function
-    for function in ALL_HTTP_FUNCTIONS:
-        deploy_http_function(c, function.__name__, memory=256)  # 256MB
-    for function in ALL_HTTP_FUNCTIONS:
-        deploy_http_function(c, function.__name__, memory=512)  # 512MB
-    for function in ALL_HTTP_FUNCTIONS:
-        deploy_http_function(c, function.__name__, memory=1024)  # 1GB
-    for function in ALL_HTTP_FUNCTIONS:
-        deploy_http_function(c, function.__name__, memory=2048)  # 2GB
+def deploy_all_functions(c):
+    for function in all_functions:
+        for memory in (256, 512, 1024, 2048):
+            deploy_function(c, function, memory=memory)
 
 
 @task
 def deploy_scheduler(
     c,
-    entry_point,
-    payload="{}",
-    schedule="1 * * * *",  # First minute, of every hour
+    entry_point=fintick_scheduler_gcp,
+    schedule="* * * * *",  # Once a minute
     timezone="Etc/UTC",
+    payload="{}",
 ):
     name = NAME_REGEX.match(entry_point).group(1).replace("_", "-")
     cmd = f"""
@@ -84,61 +91,7 @@ def deploy_scheduler(
 
 
 @task
-def create_pubsub(c, topic):
-    project_id = os.environ[PROJECT_ID]
-    publisher = pubsub_v1.PublisherClient()
-    subscriber = pubsub_v1.SubscriberClient()
-    topic_path = publisher.topic_path(project_id, topic)
-    subscription_path = subscriber.subscription_path(project_id, topic)
-
-    try:
-        topic = publisher.create_topic(request={"name": topic_path})
-    except AlreadyExists:
-        pass
-
-    # Retain messages for 1 hour
-    message_retention_duration = Duration()
-    message_retention_duration.FromSeconds(60 * 60)
-    request = {
-        "name": subscription_path,
-        "topic": topic_path,
-        "message_retention_duration": message_retention_duration,
-        "retain_acked_messages": True,
-        "enable_message_ordering": True,
-    }
-    with subscriber:
-        try:
-            subscriber.create_subscription(request=request)
-        except AlreadyExists:
-            pass
-
-
-@task
-def create_all_pubsub(c):
-    try:
-        with open("config.yaml", "r") as f:
-            config = yaml.safe_load(f)
-            for provider in config:
-                assert provider in PROVIDERS, f'Unknown data provider, "{provider}"'
-            for provider in config:
-                data = config[provider]
-                symbols = data.get("symbols", "")
-                futures = data.get("futures", "")
-                assert symbols or futures, f'No symbols or futures, "{provider}"'
-                collections = (symbols.split(","), futures.split(","))
-                for is_future, collection in enumerate(collections):
-                    for symbol in collection:
-                        topic = get_topic_id(provider, symbol, is_future=is_future)
-                        create_pubsub(c, topic)
-                        import pdb
-
-                        pdb.set_trace()
-    except FileNotFoundError:
-        print("No config.yaml")
-
-
-@task
-def build_container(c, hostname="asia.gcr.io", image="cryptotick"):
+def build_container(c, hostname="asia.gcr.io", image=FINTICK):
     # Ensure requirements
     export_requirements(c)
     build_args = get_deploy_env_vars(pre="--build-arg ", sep=" ")
@@ -153,25 +106,6 @@ def build_container(c, hostname="asia.gcr.io", image="cryptotick"):
 
 
 @task
-def push_container(c, hostname="asia.gcr.io", image="cryptotick"):
+def push_container(c, hostname="asia.gcr.io", image=FINTICK):
     name = get_container_name(hostname, image)
     c.run(f"docker push {name}")
-
-
-# @task
-# def deploy_pubsub_function(c, entry_point, memory=256):
-#     topic = TOPIC_REGEX.match(entry_point).group(1).replace("_", "-")
-#     region = os.environ[BIGQUERY_LOCATION]
-#     timeout = 540
-#     env_vars = get_deploy_env_vars()
-#     cmd = f"""
-#         gcloud functions deploy {topic} \
-#             --region={region} \
-#             --memory={memory}MB \
-#             --timeout={timeout}s \
-#             --runtime=python37 \
-#             --entry-point={entry_point} \
-#             --set-env-vars={env_vars} \
-#             --trigger-topic={topic}
-#     """
-#     c.run(cmd)

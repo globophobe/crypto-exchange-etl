@@ -2,8 +2,12 @@ import datetime
 
 import pandas as pd
 
-from ...utils import parse_period_from_to
-from .perpetual import BitflyerDailyPartition, BitflyerHourlyPartition
+from ...utils import get_max_hot_date, parse_period_from_to
+from .perpetual import (
+    BitflyerDailyPartition,
+    BitflyerDailyPartitionFromHourly,
+    BitflyerHourlyPartition,
+)
 
 
 def bitflyer_perpetual(
@@ -19,7 +23,8 @@ def bitflyer_perpetual(
     thirty_one_days_ago = datetime.datetime.utcnow().date() - pd.Timedelta("31d")
     if date_from < thirty_one_days_ago:
         date_from = thirty_one_days_ago
-        print("Bitflyer limits trades to 31 days")
+        date = date_from.isoformat()
+        print(f"Bitflyer limits trades to 31 days, period_from modified to {date}.")
     if timestamp_from and timestamp_to:
         BitflyerHourlyPartition(
             symbol,
@@ -28,6 +33,17 @@ def bitflyer_perpetual(
             verbose=verbose,
         ).main()
     if date_from and date_to:
+        # Try loading most recent daily data from hourly
+        if date_to >= get_max_hot_date():
+            ok = BitflyerDailyPartitionFromHourly(
+                symbol,
+                period_from=date_to,
+                period_to=date_to,
+                verbose=verbose,
+            ).main()
+            if ok:
+                # Modify date_to by 1 day
+                date_to -= pd.Timedelta("1d")
         BitflyerDailyPartition(
             symbol,
             period_from=date_from,

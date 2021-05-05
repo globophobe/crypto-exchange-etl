@@ -10,12 +10,18 @@ bitflyer:
 bitmex:
   XBTUSD: {}
   ETHUSD: {}
+  XBT:
+    futures: true
+  ETH:
+    futures: true
 bybit:
   "BTC-USD": {}
   "ETH-USD": {}
 coinbase:
   "BTC-USD": {}
   "ETH-USD": {}
+deribit:
+  "BTC-PERPETUAL": {}
 ftx:
   "BTC/USD": {}
   "ETH/USD": {} 
@@ -23,3 +29,6 @@ ftx:
   "ETH-PERP": {} 
   "BTC-MOVE":
     futures: true
+upbit:
+  "KRW-BTC": {} 
+  "KRW-ETH": {}

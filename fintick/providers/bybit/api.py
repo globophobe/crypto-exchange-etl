@@ -5,8 +5,21 @@ from decimal import Decimal
 import httpx
 
 from ...constants import HTTPX_ERRORS
-from ...utils import iter_api, parse_datetime
-from .constants import API_URL, MAX_RESULTS, MIN_ELAPSED_PER_REQUEST
+from ...utils import (
+    increment_api_total_requests,
+    iter_api,
+    parse_datetime,
+    throttle_api_requests,
+)
+from .constants import (
+    API_URL,
+    BYBIT_MAX_REQUESTS_RESET,
+    BYBIT_TOTAL_REQUESTS,
+    MAX_REQUESTS,
+    MAX_REQUESTS_RESET,
+    MAX_RESULTS,
+    MIN_ELAPSED_PER_REQUEST,
+)
 
 
 def get_bybit_api_url(url, pagination_id):
@@ -44,8 +57,15 @@ def get_trades(symbol, timestamp_from, pagination_id, log_prefix=None):
 
 
 def get_bybit_api_response(url, pagination_id=None, retry=30):
+    throttle_api_requests(
+        BYBIT_MAX_REQUESTS_RESET,
+        BYBIT_TOTAL_REQUESTS,
+        MAX_REQUESTS_RESET,
+        MAX_REQUESTS,
+    )
     try:
         response = httpx.get(get_bybit_api_url(url, pagination_id))
+        increment_api_total_requests(BYBIT_TOTAL_REQUESTS)
         if response.status_code == 200:
             result = response.read()
             data = json.loads(result, parse_float=Decimal)

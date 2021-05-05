@@ -1,6 +1,6 @@
 import re
 
-from ...fintick import (
+from ...controllers import (
     FinTickMultiSymbolDailyMixin,
     FinTickMultiSymbolHourlyMixin,
     FinTickMultiSymbolREST,

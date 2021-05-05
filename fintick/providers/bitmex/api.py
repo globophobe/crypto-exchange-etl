@@ -1,3 +1,4 @@
+import datetime
 import json
 import re
 import time
@@ -117,6 +118,14 @@ def get_bitmex_api_response(url, pagination_id=None, retry=30):
     try:
         response = httpx.get(get_bitmex_api_url(url, pagination_id))
         if response.status_code == 200:
+            remaining = response.headers["x-ratelimit-remaining"]
+            if remaining == 0:
+                timestamp = datetime.datetime.utcnow().timestamp()
+                reset = response.headers["x-ratelimit-reset"]
+                if reset > timestamp:
+                    sleep_duration = reset - timestamp
+                    print(f"Max requests, sleeping {sleep_duration} seconds")
+                    time.sleep(sleep_duration)
             result = response.read()
             return json.loads(result, parse_float=Decimal)
         elif response.status_code == 429:

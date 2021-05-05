@@ -1,15 +1,18 @@
 from copy import deepcopy
 
-from fintick.aggregators.cumsum.constants import NOTIONAL
-from fintick.aggregators.cumsum.lib import aggregate_cumsum, get_initial_cumsum_cache
+from fintick.aggregators.threshold.constants import NOTIONAL
+from fintick.aggregators.threshold.lib import (
+    aggregate_threshold,
+    get_initial_threshold_cache,
+)
 
 from .utils import get_data_frame
 
 
-def get_samples(trades, cache=None, cumsum_attr=NOTIONAL, cumsum_value=2):
+def get_samples(trades, cache=None, threshold_attr=NOTIONAL, threshold_value=2):
     data_frame, _ = get_data_frame(trades)
-    cache = cache or get_initial_cumsum_cache(cumsum_attr)
-    return aggregate_cumsum(data_frame, cache, cumsum_attr, cumsum_value)
+    cache = cache or get_initial_threshold_cache(threshold_attr)
+    return aggregate_threshold(data_frame, cache, threshold_attr, threshold_value)
 
 
 def test_cumsum():

@@ -1,6 +1,11 @@
 import httpx
 import pandas as pd
 
+FINTICK = "fintick"
+FINTICK_API = "fintick-api"
+FINTICK_AGGREGATE = "fintick-aggregate"
+FINTICK_AGGREGATE_BARS = "fintick-aggregate-bars"
+
 GOOGLE_APPLICATION_CREDENTIALS = "GOOGLE_APPLICATION_CREDENTIALS"
 FIREBASE_ADMIN_CREDENTIALS = "FIREBASE_ADMIN_CREDENTIALS"
 PROJECT_ID = "PROJECT_ID"
@@ -25,6 +30,7 @@ PRODUCTION_ENV_VARS = (
 )
 
 BIGQUERY_HOT = pd.Timedelta("2d")
+BIGQUERY_MAX_HOT = pd.Timedelta("6d")
 
 HTTPX_ERRORS = (
     httpx.ConnectError,

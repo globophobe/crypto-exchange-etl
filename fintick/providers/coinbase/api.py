@@ -4,7 +4,7 @@ import httpx
 
 from ...constants import HTTPX_ERRORS
 from ...utils import iter_api, parse_datetime
-from .constants import MAX_RESULTS, MIN_ELAPSED_PER_REQUEST, URL
+from .constants import API_URL, MAX_RESULTS, MIN_ELAPSED_PER_REQUEST
 
 
 def get_coinbase_api_url(url, pagination_id):
@@ -26,7 +26,7 @@ def get_coinbase_api_timestamp(trade):
 
 
 def get_trades(symbol, timestamp_from, pagination_id, log_prefix=None):
-    url = f"{URL}/products/{symbol}/trades"
+    url = f"{API_URL}/products/{symbol}/trades"
     return iter_api(
         url,
         get_coinbase_api_pagination_id,

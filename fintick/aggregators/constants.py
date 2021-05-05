@@ -1,3 +1,10 @@
+TRADES = "trades"
+CANDLES = "candles"
+THRESHOLD = "threshold"
+RENKO = "renko"
+
+AGGREGATORS = (TRADES, CANDLES, THRESHOLD, RENKO)
+
 VOLUME = "volume"
 NOTIONAL = "notional"
 TICKS = "ticks"

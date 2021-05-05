@@ -1,17 +1,7 @@
-import pandas as pd
 from google.cloud import bigquery
 
+from ..constants import BIGQUERY_MAX_HOT
 from .base import BaseBigQueryLoader
-
-
-class BigQueryTenMinutePartition(BaseBigQueryLoader):
-    def set_partition(self, table):
-        table.time_partitioning = bigquery.RangePartitioning(
-            field="interval",
-            type_=bigquery.PartitionRange(start=0, end=1440, interval=10),
-            # No expiration_ms as will overwrite
-        )
-        return table
 
 
 class BigQueryHourly(BaseBigQueryLoader):
@@ -19,7 +9,7 @@ class BigQueryHourly(BaseBigQueryLoader):
         table.time_partitioning = bigquery.TimePartitioning(
             field="timestamp",
             type_=bigquery.TimePartitioningType.HOUR,
-            expiration_ms=int(pd.Timedelta("7d").total_seconds()) * 1000,
+            expiration_ms=int(BIGQUERY_MAX_HOT.total_seconds()) * 1000,
         )
         return table
 

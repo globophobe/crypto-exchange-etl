@@ -4,20 +4,20 @@ import pandas as pd
 
 from ..lib import aggregate_rows, get_next_cache, merge_cache
 from .constants import (
-    CUMSUM_ATTRS,
     DAILY,
     ERA_LENGTHS,
     MONTHLY,
     QUARTERLY,
+    THRESH_ATTRS,
     WEEKLY,
     YEARLY,
 )
 
 
-def parse_cumsum_attr(cumsum_attr):
-    cumsum_attrs = ", ".join(CUMSUM_ATTRS)
-    assert cumsum_attr in CUMSUM_ATTRS, f"cumsum_attr should be one of {cumsum_attrs}"
-    return cumsum_attr
+def parse_thresh_attr(thresh_attr):
+    thresh_attrs = ", ".join(THRESH_ATTRS)
+    assert thresh_attr in THRESH_ATTRS, f"thresh_attr should be one of {thresh_attrs}"
+    return thresh_attr
 
 
 def parse_era_length(era_length):
@@ -26,14 +26,19 @@ def parse_era_length(era_length):
     return era_lengths
 
 
-def get_initial_cumsum_cache(cumsum_attr, timestamp):
-    return {"era": timestamp, cumsum_attr: 0}
+def get_initial_thresh_cache(thresh_attr, thresh_value, timestamp):
+    return {
+        "era": timestamp,
+        "thresh_attr": thresh_attr,
+        "thresh_value": thresh_value,
+        "value": 0,
+    }
 
 
-def get_cache_for_era_length(cache, timestamp, era_length, cumsum_attr):
+def get_cache_for_era_length(cache, timestamp, era_length, thresh_attr):
     date = cache["era"].date()
     next_date = timestamp.date()
-    initial_cache = get_initial_cumsum_cache(cumsum_attr, timestamp)
+    initial_cache = get_initial_thresh_cache(thresh_attr, timestamp)
     # Reset cache for new era
     if era_length == DAILY:
         if date != next_date:
@@ -53,19 +58,19 @@ def get_cache_for_era_length(cache, timestamp, era_length, cumsum_attr):
     return cache
 
 
-def merge_cumsum_cache(previous, current, top_n=0):
+def merge_thresh_cache(previous, current, top_n=0):
     current["open"] = previous["open"]
     current["high"] = max(previous["high"], current["high"])
     current["low"] = min(previous["low"], current["low"])
     return merge_cache(previous, current, top_n=top_n)
 
 
-def aggregate_cumsum(data_frame, cache, cumsum_attr, cumsum_value, top_n=0):
+def aggregate_thresh(data_frame, cache, thresh_attr, thresh_value, top_n=0):
     start = 0
     samples = []
     for index, row in data_frame.iterrows():
-        cache[cumsum_attr] += row[cumsum_attr]
-        if cache[cumsum_attr] >= cumsum_value:
+        cache[thresh_attr] += row[thresh_attr]
+        if cache[thresh_attr] >= thresh_value:
             df = data_frame.loc[start:index]
             sample = aggregate_rows(df, uid=str(uuid4()), top_n=top_n)
             if "nextDay" in cache:
@@ -73,7 +78,7 @@ def aggregate_cumsum(data_frame, cache, cumsum_attr, cumsum_value, top_n=0):
                 sample = merge_cache(previous, sample, top_n=top_n)
             samples.append(sample)
             # Reinitialize cache
-            cache[cumsum_attr] = 0
+            cache[thresh_attr] = 0
             # Next index
             start = index + 1
     # Cache

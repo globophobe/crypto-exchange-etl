@@ -1,7 +1,7 @@
 import httpx
 import pandas as pd
 
-from ...fintick import FinTickDailyS3Mixin, FinTickSequentialIntegerMixin
+from ...controllers import FinTickDailyS3Mixin, FinTickSequentialIntegerMixin
 from .api import get_bybit_api_timestamp, get_trades
 from .constants import BYBIT, MAX_RESULTS, S3_URL
 

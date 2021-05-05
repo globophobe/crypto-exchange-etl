@@ -5,13 +5,26 @@ from decimal import Decimal
 import httpx
 
 from ...constants import HTTPX_ERRORS
-from ...utils import iter_api, parse_datetime
-from .constants import MAX_RESULTS, MIN_ELAPSED_PER_REQUEST, URL
+from ...utils import (
+    increment_api_total_requests,
+    iter_api,
+    parse_datetime,
+    throttle_api_requests,
+)
+from .constants import (
+    BITFLYER_MAX_REQUESTS_RESET,
+    BITFLYER_TOTAL_REQUESTS,
+    MAX_REQUESTS,
+    MAX_REQUESTS_RESET,
+    MAX_RESULTS,
+    MIN_ELAPSED_PER_REQUEST,
+    URL,
+)
 
 
 def get_bitflyer_api_url(url, pagination_id):
     if pagination_id:
-        url = f"{url}?after={pagination_id}"
+        url += f"{url}&before={pagination_id}"
     return url
 
 
@@ -25,7 +38,7 @@ def get_bitflyer_api_timestamp(trade):
 
 
 def get_trades(symbol, timestamp_from, pagination_id, log_prefix=None):
-    url = f"{URL}/executions?product_code={symbol}"
+    url = f"{URL}/executions?product_code={symbol}&count={MAX_RESULTS}"
     return iter_api(
         url,
         get_bitflyer_api_pagination_id,
@@ -40,11 +53,19 @@ def get_trades(symbol, timestamp_from, pagination_id, log_prefix=None):
 
 
 def get_bitflyer_api_response(url, pagination_id=None, retry=30):
+    throttle_api_requests(
+        BITFLYER_MAX_REQUESTS_RESET,
+        BITFLYER_TOTAL_REQUESTS,
+        MAX_REQUESTS_RESET,
+        MAX_REQUESTS,
+    )
     try:
         response = httpx.get(get_bitflyer_api_url(url, pagination_id))
+        increment_api_total_requests(BITFLYER_TOTAL_REQUESTS)
         if response.status_code == 200:
             result = response.read()
-            return json.loads(result, parse_float=Decimal)
+            data = json.loads(result, parse_float=Decimal)
+            return data
         else:
             raise Exception(f"HTTP {response.status_code}: {response.reason_phrase}")
     except HTTPX_ERRORS:

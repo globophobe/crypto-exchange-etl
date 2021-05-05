@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ...utils import get_hot_date, parse_period_from_to
+from ...utils import get_max_hot_date, parse_period_from_to
 from .spot import (
     CoinbaseDailyPartition,
     CoinbaseDailyPartitionFromHourly,
@@ -27,7 +27,7 @@ def coinbase_spot(
         ).main()
     if date_from and date_to:
         # Try loading most recent daily data from hourly
-        if date_to == get_hot_date():
+        if date_to >= get_max_hot_date():
             ok = CoinbaseDailyPartitionFromHourly(
                 symbol,
                 period_from=date_to,
