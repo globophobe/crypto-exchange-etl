@@ -23,7 +23,7 @@ class TradeAggregatorDailyPartitionFromHourly(
         return period_to
 
     def get_hourly_document(self, timestamp):
-        collection = self.destination_table(sep="-")
+        collection = self.get_destination(sep="-")
         document_name = timestamp.strftime("%Y-%m-%dT%H")
         return FirestoreCache(collection).get(document_name)
 

@@ -50,14 +50,14 @@ class FinTickDailyMixin:
 
     def iter_partition(self):
         for partition in self.partition_iterator:
-            self.partition = self.get_partition(partition)
             self.timestamp_from = datetime.datetime.combine(
-                self.partition, datetime.datetime.min.time()
+                partition, datetime.datetime.min.time()
             ).replace(microsecond=0, tzinfo=datetime.timezone.utc)
             self.timestamp_to = datetime.datetime.combine(
-                self.partition, datetime.datetime.max.time()
+                partition, datetime.datetime.max.time()
             ).replace(tzinfo=datetime.timezone.utc)
-            yield self.partition
+            self.partition = partition
+            yield partition
 
 
 class FinTickMultiSymbolDailyMixin(FinTickDailyMixin):

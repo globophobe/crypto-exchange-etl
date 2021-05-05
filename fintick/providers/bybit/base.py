@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import httpx
 import pandas as pd
 
@@ -21,10 +23,10 @@ class BybitMixin:
         return self.get_timestamp(trade).nanosecond
 
     def get_price(self, trade):
-        return trade["price"]
+        return Decimal(trade["price"])
 
     def get_volume(self, trade):
-        return trade["qty"]
+        return Decimal(trade["qty"])
 
     def get_notional(self, trade):
         return self.get_volume(trade) / self.get_price(trade)

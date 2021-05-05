@@ -40,10 +40,12 @@ class BaseAggregator(FinTick):
         self.verbose = verbose
 
     def get_source(self, sep="_"):
-        return self.source_table.split(".").replace("_", sep)
+        _, table_id = self.source_table.split(".")
+        return table_id.replace("_", sep)
 
     def get_destination(self, sep="_"):
-        return self.destination_table.replace("_", sep)
+        _, table_id = self.destination_table.split(".")
+        return table_id.replace("_", sep)
 
     @property
     def log_prefix(self):
@@ -137,7 +139,7 @@ class BaseAggregator(FinTick):
     def destination_has_data(self, document):
         return self.firestore_destination.has_data(document)
 
-    def main(self, data_frame=None):
+    def main(self):
         """Partitions are independent, so iterates backwards"""
         if self.period_from and self.period_to:
             for partition in self.iter_partition():
@@ -145,8 +147,7 @@ class BaseAggregator(FinTick):
                 document = self.get_document_name(partition)
                 if self.source_has_data(document):
                     if not self.destination_has_data(document):
-                        if data_frame is None:
-                            data_frame = self.get_data_frame()
+                        data_frame = self.get_data_frame()
                         # Are there any trades?
                         if data_frame is not None:
                             df = self.process_data_frame(data_frame)
@@ -216,7 +217,7 @@ class HourlyAggregatorMixin(FinTickHourlyMixin):
 
     @property
     def where_clause(self):
-        return "timestamp >= @timestamp_from and timestamp < @timestamp_to"
+        return "timestamp >= @timestamp_from and timestamp <= @timestamp_to"
 
 
 class DailyAggregatorMixin(FinTickDailyMixin):

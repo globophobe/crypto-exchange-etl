@@ -26,7 +26,7 @@ class BitfinexMixin(FinTickNonSequentialIntegerMixin):
 
     @property
     def symbol(self):
-        return normalize_symbol(self.api_symbol, exchange=BITFINEX)
+        return normalize_symbol(self.api_symbol, provider=BITFINEX)
 
     def get_pagination_id(self, data=None):
         return int(self.timestamp_to.timestamp() * 1000)  # Millisecond

@@ -1,25 +1,37 @@
 binance:
-  BTCUSDT: {}
-  ETHUSDT: {}
+  api:
+    BTCUSDT:
+      api:
+        ETHUSDT:
 bitfinex:
-  tBTCUSD: {}
-  tETHUSD: {}
+  api:
+    tBTCUSD: {}
+    tETHUSD: {}
 bitflyer:
-  BTC_JPY: {}
-  ETH_JPY: {}
+  api:
+    BTC_JPY:
+    ETH_JPY: {}
 bitmex:
-  XBTUSD: {}
-  ETHUSD: {}
+  api:
+    XBTUSD: {}
+    ETHUSD: {}
 bybit:
-  "BTC-USD": {}
-  "ETH-USD": {}
+  api:
+    BTCUSD: {}
+    ETHUSD: {}
 coinbase:
-  "BTC-USD": {}
-  "ETH-USD": {}
+  api:
+    "BTC-USD":
+      - aggregate
+      - candles:
+        timeframe: "1m"
+        top_n: 25
+    "ETH-USD": {}
 ftx:
-  "BTC/USD": {}
-  "ETH/USD": {} 
-  "BTC-PERP": {} 
-  "ETH-PERP": {} 
-  "BTC-MOVE":
-    futures: true
+  api:
+    "BTC/USD": {}
+    "ETH/USD": {} 
+    "BTC-PERP": {} 
+    "ETH-PERP": {} 
+    "BTC-MOVE":
+      futures: true

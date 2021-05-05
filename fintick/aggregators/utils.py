@@ -1,9 +1,5 @@
-from copy import deepcopy
-
-from fintick.fscache import FirestoreCache
-
-from ..constants import FINTICK, FINTICK_AGGREGATE
-from ..utils import normalize_symbol, publish
+from ..bqloader import get_table_id
+from ..utils import normalize_symbol
 from .constants import AGGREGATORS
 
 
@@ -22,40 +18,10 @@ def assert_aggregator(aggregator):
     assert aggregator in AGGREGATORS, f"aggregator should be one of {aggregators}"
 
 
-def aggregate_callback(provider: str = None, symbol: str = None):
-    """
-    {"ftx": [{
-        "BTC-MOVE": {
-            "aggregators": [
-                {
-                    "aggregator": "threshold",
-                    "thresh_attr": "notional",
-                    "thresh_value": 1000,
-                    "top_n": 100,
-                    "callbacks: []
-                }
-            ],
-            "futures": True
-        }]
-    }
-    """
-    data = FirestoreCache(FINTICK).get_one()
-    if data is not None:
-        if provider in data:
-            symbols = data[provider]
-            if symbol in symbols:
-                for params in symbols[symbol]:
-                    d = deepcopy(data)
-                    d["provider"] = provider
-                    d["symbol"] = symbol
-                    publish(FINTICK_AGGREGATE, d)
-
-
 def get_source_table(provider, symbol, futures=False, hot=False):
-    symbol = normalize_symbol(provider, symbol)
-    source_table = f"{provider}_{symbol}"
+    suffix = normalize_symbol(symbol, provider=provider)
     if futures:
-        source_table += "_futures"
+        suffix += "_futures"
     if hot:
-        source_table += "_hot"
-    return source_table + "_aggregated"
+        suffix += "_hot"
+    return get_table_id(provider, suffix=suffix)
