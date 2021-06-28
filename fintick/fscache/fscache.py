@@ -5,15 +5,15 @@ from firebase_admin import firestore
 from firebase_admin.credentials import Certificate
 
 from ..constants import FIREBASE_ADMIN_CREDENTIALS, PROJECT_ID
-from ..utils import is_local
+from ..utils import is_local, set_environment
 
 
 class FirestoreCache:
     def __init__(self, collection):
-        self.collection = collection
 
         if "FIREBASE_INIT" not in os.environ:
             if is_local():
+                set_environment()
                 certificate = Certificate(os.environ[FIREBASE_ADMIN_CREDENTIALS])
                 firebase_admin.initialize_app(certificate)
             else:
@@ -22,6 +22,7 @@ class FirestoreCache:
             os.environ["FIREBASE_INIT"] = "true"
 
         self.firestore = firestore.client()
+        self.collection = collection
 
     def is_initial(self):
         query = self.firestore.collection(self.collection).limit(1)

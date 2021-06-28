@@ -192,8 +192,7 @@ class FinTickDailyPartitionFromHourlyMixin(FinTickDailyMixin, FinTickDailyHourly
                 has_data = all([document and document["ok"] for document in documents])
                 if has_data:
                     data_frame = self.load_data_frame()
-                    self.assert_data_frame(data_frame)
-                    self.write(data_frame)
+                    self.write(data_frame, is_complete=True)
                     self.clean_firestore()
                     return True
             return ok

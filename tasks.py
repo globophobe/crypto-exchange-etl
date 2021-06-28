@@ -43,7 +43,7 @@ def upload_config(c):
 
 
 @task
-def deploy_function(c, entry_point, memory=256, is_http=False):
+def deploy_function(c, entry_point, memory=256, is_http=True):
     name = NAME_REGEX.match(entry_point).group(1).replace("_", "-")
     region = os.environ[BIGQUERY_LOCATION]
     timeout = 540  # Max, 9 minutes

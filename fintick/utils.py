@@ -13,6 +13,7 @@ from .constants import (
     BIGQUERY_HOT,
     BIGQUERY_MAX_HOT,
     GCP_APPLICATION_CREDENTIALS,
+    LOCAL_ENV_VARS,
     PRODUCTION_ENV_VARS,
     PROJECT_ID,
 )
@@ -23,14 +24,12 @@ def set_environment():
         with open("env.yaml", "r") as env:
             for line in env:
                 key, value = line.split(": ")
-                v = value.strip()
-                if key in GCP_APPLICATION_CREDENTIALS:
-                    path = Path.cwd().parents[0] / "keys" / v
-                    v = str(path.resolve())
-                    with open(v) as key_file:
-                        data = json.loads(key_file.read())
-                        os.environ[PROJECT_ID] = data["project_id"]
-                os.environ[key] = v
+                if key in LOCAL_ENV_VARS:
+                    v = value.strip()
+                    if key in GCP_APPLICATION_CREDENTIALS:
+                        path = Path.cwd().parents[0] / "keys" / v
+                        v = str(path.resolve())
+                    os.environ[key] = v
 
 
 def get_env_vars():

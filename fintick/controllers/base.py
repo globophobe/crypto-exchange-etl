@@ -228,7 +228,7 @@ class FinTickREST(FinTick):
         data = self.get_last_document(self.partition)
         return data is not None
 
-    def assert_data_frame(self, data_frame, trades):
+    def assert_data_frame(self, data_frame, trades=None):
         # Are trades unique?
         assert len(data_frame) == len(data_frame.uid.unique())
         assert_type_decimal(data_frame, ("price", "volume", "notional"))
@@ -307,8 +307,8 @@ class FinTickSequentialIntegerMixin(FinTickIntegerPaginationMixin):
 class FinTickNonSequentialIntegerMixin:
     """Bitfinex, Bitflyer, and FTX REST API"""
 
-    def assert_data_frame(self, data_frame, trades):
-        super().assert_data_frame(data_frame, trades)
+    def assert_data_frame(self, data_frame, trades=None):
+        super().assert_data_frame(data_frame, trades=trades)
         if self.schema == MULTIPLE_SYMBOL_SCHEMA:
             for symbol in data_frame.symbol.unique():
                 df = data_frame[data_frame.symbol == symbol]
