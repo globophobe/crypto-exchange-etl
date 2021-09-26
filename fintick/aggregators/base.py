@@ -263,7 +263,7 @@ class BaseCacheAggregator(BaseAggregator):
             doc = self.get_document_name()
             raise Exception(f"Cache does not exist, {doc}")
         if not data:
-            data_frame, data = self.get_initial_cache(data_frame)
+            data_frame, data = self.get_initial_cache(data_frame, self.partition)
         return data_frame, data
 
     @property

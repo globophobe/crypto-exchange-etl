@@ -1,3 +1,4 @@
+import datetime
 from uuid import uuid4
 
 import pandas as pd
@@ -35,10 +36,13 @@ def get_initial_thresh_cache(thresh_attr, thresh_value, timestamp):
     }
 
 
-def get_cache_for_era_length(cache, timestamp, era_length, thresh_attr):
-    date = cache["era"].date()
+def get_cache_for_era_length(cache, timestamp, era_length, thresh_attr, thresh_value):
+    if not isinstance(cache["era"], datetime.date):
+        date = cache["era"].date()
+    else:
+        date = cache["era"]
     next_date = timestamp.date()
-    initial_cache = get_initial_thresh_cache(thresh_attr, timestamp)
+    initial_cache = get_initial_thresh_cache(thresh_attr, thresh_value, timestamp)
     # Reset cache for new era
     if era_length == DAILY:
         if date != next_date:

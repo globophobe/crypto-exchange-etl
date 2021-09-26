@@ -11,8 +11,8 @@ from ..bqloader import (
     get_schema_columns,
     get_table_id,
 )
+from ..downloader import assert_type_decimal, row_to_json
 from ..fscache import FirestoreCache, firestore_data, get_collection_name
-from ..s3downloader import assert_type_decimal, row_to_json
 from ..utils import normalize_symbol
 
 

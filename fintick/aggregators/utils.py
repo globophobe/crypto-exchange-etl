@@ -18,10 +18,12 @@ def assert_aggregator(aggregator):
     assert aggregator in AGGREGATORS, f"aggregator should be one of {aggregators}"
 
 
-def get_source_table(provider, symbol, futures=False, hot=False):
+def get_source_table(provider, symbol, futures=False, hot=False, aggregated=False):
     suffix = normalize_symbol(symbol, provider=provider)
     if futures:
         suffix += "_futures"
     if hot:
         suffix += "_hot"
+    if aggregated:
+        suffix += "_aggregated"
     return get_table_id(provider, suffix=suffix)

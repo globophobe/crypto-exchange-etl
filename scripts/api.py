@@ -88,6 +88,7 @@ def thresh(
         period_to: str = None,
         thresh_attr: str = None,
         thresh_value: float = None,
+        era_length: str = "W",
         top_n: int = 0,
         futures: bool = False,
         verbose: bool = True
@@ -99,6 +100,7 @@ def thresh(
             period_to=period_to,
             thresh_attr=thresh_attr,
             thresh_value=thresh_value,
+            era_length=era_length,
             top_n=top_n,
             futures=futures,
             verbose=verbose,

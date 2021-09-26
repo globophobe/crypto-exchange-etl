@@ -10,8 +10,7 @@ from ..bqloader import (
     get_schema_columns,
     get_table_id,
 )
-from ..fscache import FirestoreCache
-from ..s3downloader import (
+from ..downloader import (
     HistoricalDownloader,
     calculate_notional,
     calculate_tick_rule,
@@ -19,6 +18,7 @@ from ..s3downloader import (
     strip_nanoseconds,
     utc_timestamp,
 )
+from ..fscache import FirestoreCache
 from ..utils import parse_period_from_to
 
 

@@ -10,6 +10,7 @@ import pendulum
 from google.cloud import pubsub_v1
 
 from .constants import (
+    AWS_PROJECT,
     BIGQUERY_HOT,
     BIGQUERY_MAX_HOT,
     GCP_APPLICATION_CREDENTIALS,
@@ -59,6 +60,11 @@ def set_env_list(key, value):
         values.append(value)
         values = list(set(values))
         os.environ[key] = " ".join(values)
+
+
+def get_trades_name():
+    project = os.environ[AWS_PROJECT]
+    return f"{project}-trades"
 
 
 def get_api_max_requests_reset(seconds):

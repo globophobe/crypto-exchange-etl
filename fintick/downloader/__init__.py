@@ -1,3 +1,4 @@
+from .downloader import HistoricalDownloader
 from .lib import (
     assert_type_decimal,
     calculate_notional,
@@ -7,7 +8,6 @@ from .lib import (
     strip_nanoseconds,
     utc_timestamp,
 )
-from .s3downloader import HistoricalDownloader
 
 __all__ = [
     "utc_timestamp",

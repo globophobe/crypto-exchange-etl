@@ -10,6 +10,7 @@ def thresh_aggregator(
     period_to: str,
     thresh_attr: str,
     thresh_value: float,
+    era_length="W",
     top_n: int = 0,
     futures: bool = False,
     verbose: bool = False,
@@ -20,7 +21,7 @@ def thresh_aggregator(
     # Reversed, daily then hourly
     if date_from and date_to:
         ThreshAggregatorDailyPartition(
-            get_source_table(provider, symbol, futures=futures),
+            get_source_table(provider, symbol, futures=futures, aggregated=True),
             period_from=date_from,
             period_to=date_to,
             futures=futures,
@@ -31,7 +32,9 @@ def thresh_aggregator(
         ).main()
     if timestamp_from and timestamp_to:
         ThreshAggregatorHourlyPartition(
-            get_source_table(provider, symbol, futures=futures, hot=True),
+            get_source_table(
+                provider, symbol, futures=futures, hot=True, aggregated=True
+            ),
             period_from=timestamp_from,
             period_to=timestamp_to,
             futures=futures,

@@ -16,7 +16,7 @@ class BaseThreshAggregator(BaseCacheAggregator):
         source_table,
         thresh_attr,
         thresh_value,
-        era_length="M",
+        era_length="W",
         top_n=10,
         **kwargs,
     ):
@@ -31,15 +31,19 @@ class BaseThreshAggregator(BaseCacheAggregator):
         super().__init__(source_table, destination_table, **kwargs)
         self.top_n = top_n
 
-    def get_initial_cache(self, data_frame):
-        cache = get_initial_thresh_cache(self.thresh_attr)
+    def get_initial_cache(self, data_frame, timestamp):
+        cache = get_initial_thresh_cache(self.thresh_attr, self.thresh_value, timestamp)
         return data_frame, cache
 
     def get_cache(self, data_frame):
         data_frame, data = super().get_cache(data_frame)
         # Reinitialize cache for new era
         data = get_cache_for_era_length(
-            data, self.timestamp_from, self.era_length, self.thresh_attr
+            data,
+            self.timestamp_from,
+            self.era_length,
+            self.thresh_attr,
+            self.thresh_value,
         )
         return data_frame, data
 
